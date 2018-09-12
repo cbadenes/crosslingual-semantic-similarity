@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>io.github.librairy</groupId>
+  <artifactId>eval-crosslingual-similarity</artifactId>
+  <version>0.1</version>
+  <packaging>jar</packaging>
+  <name>Eval Cross-Lingual Similarity</name>
+  <description>Experiments on semantic similarity from probabilistic topic models</description>
+  <url>https://github.com/librairy/eval-crosslingual-similarity</url>
+  <inceptionYear>2018</inceptionYear>
+
+  <prerequisites>
+    <maven>3.2.5</maven>
+  </prerequisites>
+
+  <properties>
+	  <!-- Project Details -->
+	  <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	  <project.java.version>1.8</project.java.version>
+	  <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+	  <!-- Maven Plugins -->
+	  <maven.appassembler.plugin.version>1.9</maven.appassembler.plugin.version>
+	  <maven.assembly.plugin.version>2.5.5</maven.assembly.plugin.version>
+	  <maven.compiler.plugin.version>3.3</maven.compiler.plugin.version>
+	  <maven.jar.plugin.version>2.6</maven.jar.plugin.version>
+	  <maven.site.plugin.version>0.10</maven.site.plugin.version>
+	  <maven.scala.version>2.15.2</maven.scala.version>
+	  <maven.surefire.plugin.version>2.11</maven.surefire.plugin.version>
+	  <maven.war.plugin.version>2.6</maven.war.plugin.version>
+	  <maven.resources.plugin.version>2.7</maven.resources.plugin.version>
+	  <surefire.junit.version>2.12</surefire.junit.version>
+
+	  <!-- Project Dependencies -->
+	  <commons-text.version>1.4</commons-text.version>
+	  <commons-beanutils.version>1.9.3</commons-beanutils.version>
+	  <commons-io.version>2.6</commons-io.version>
+	  <corenlp.version>3.9.1</corenlp.version>
+	  <google.api>1.34.0</google.api>
+	  <google.truth>0.41</google.truth>
+	  <guava.version>25.1-jre</guava.version>
+	  <jackson.version>2.9.4</jackson.version>
+	  <jsoup.version>1.11.3</jsoup.version>
+	  <junit.version>4.12</junit.version>
+	  <language-detector.version>0.6</language-detector.version>
+	  <librairy.version>[1.0,)</librairy.version>
+	  <logback.version>1.1.3</logback.version>
+	  <mallet.version>2.0.8</mallet.version>
+	  <mapdb.version>3.0.7</mapdb.version>
+	  <oai.version>1.1.0</oai.version>
+	  <unirest.version>1.4.9</unirest.version>
+  </properties>
+
+	  <dependencyManagement>
+		  <dependencies>
+
+			  <!-- librAIry -->
+			  <dependency>
+				  <groupId>org.librairy</groupId>
+				  <artifactId>learner-service-facade</artifactId>
+				  <version>${librairy.version}</version>
+			  </dependency>
+
+			  <!-- Http Libraries -->
+			  <dependency>
+				  <groupId>com.mashape.unirest</groupId>
+				  <artifactId>unirest-java</artifactId>
+				  <version>${unirest.version}</version>
+			  </dependency>
+			  <dependency>
+				  <groupId>org.jsoup</groupId>
+				  <artifactId>jsoup</artifactId>
+				  <version>${jsoup.version}</version>
+			  </dependency>
+
+			  <!-- Language Detector -->
+			  <dependency>
+				  <groupId>com.optimaize.languagedetector</groupId>
+				  <artifactId>language-detector</artifactId>
+				  <version>${language-detector.version}</version>
+			  </dependency>
+
+			  <!-- JSON serializer -->
+			  <dependency>
+				  <groupId>com.fasterxml.jackson.core</groupId>
+				  <artifactId>jackson-databind</artifactId>
+				  <version>${jackson.version}</version>
+			  </dependency>
+			  <dependency>
+				  <groupId>com.fasterxml.jackson.core</groupId>
+				  <artifactId>jackson-annotations</artifactId>
+				  <version>${jackson.version}</version>
+			  </dependency>
+
+			  <!-- Commons -->
+			  <dependency>
+				  <groupId>com.google.guava</groupId>
+				  <artifactId>guava</artifactId>
+				  <version>${guava.version}</version>
+			  </dependency>
+			 <dependency>
+				  <groupId>org.mapdb</groupId>
+				  <artifactId>mapdb</artifactId>
+				  <version>${mapdb.version}</version>
+			  </dependency>
+			  <dependency>
+				  <groupId>commons-io</groupId>
+				  <artifactId>commons-io</artifactId>
+				  <version>${commons-io.version}</version>
+			  </dependency>
+
+			  <!-- Stanford CoreNLP -->
+			  <dependency>
+				  <groupId>edu.stanford.nlp</groupId>
+				  <artifactId>stanford-corenlp</artifactId>
+				  <version>${corenlp.version}</version>
+			  </dependency>
+			  <dependency>
+				  <groupId>edu.stanford.nlp</groupId>
+				  <artifactId>stanford-corenlp</artifactId>
+				  <version>${corenlp.version}</version>
+				  <classifier>models</classifier>
+			  </dependency>
+
+			  <!-- Google API -->
+			  <dependency>
+				  <groupId>com.google.cloud</groupId>
+				  <artifactId>google-cloud-translate</artifactId>
+				  <version>${google.api}</version>
+			  </dependency>
+			  <dependency>
+				  <groupId>com.google.truth</groupId>
+				  <artifactId>truth</artifactId>
+				  <version>${google.truth}</version>
+			  </dependency>
+
+			  <!-- ML Libraries -->
+			  <dependency>
+				  <groupId>cc.mallet</groupId>
+				  <artifactId>mallet</artifactId>
+				  <version>${mallet.version}</version>
+			  </dependency>
+
+			  <!-- Log Libraries -->
+			  <dependency>
+				  <groupId>ch.qos.logback</groupId>
+				  <artifactId>logback-classic</artifactId>
+				  <version>${logback.version}</version>
+			  </dependency>
+			  <dependency>
+				  <groupId>ch.qos.logback</groupId>
+				  <artifactId>logback-core</artifactId>
+				  <version>${logback.version}</version>
+			  </dependency>
+
+			  <dependency>
+				  <groupId>org.apache.commons</groupId>
+				  <artifactId>commons-text</artifactId>
+				  <version>${commons-text.version}</version>
+			  </dependency>
+
+			  <dependency>
+				  <groupId>commons-beanutils</groupId>
+				  <artifactId>commons-beanutils</artifactId>
+				  <version>${commons-beanutils.version}</version>
+			  </dependency>
+
+			  <!-- Unit tests Libraries -->
+			  <dependency>
+				  <groupId>junit</groupId>
+				  <artifactId>junit</artifactId>
+				  <version>${junit.version}</version>
+			  </dependency>
+
+		  </dependencies>
+	  </dependencyManagement>
+
+	  <dependencies>
+
+		  <!-- librAIry -->
+		  <dependency>
+			  <groupId>org.librairy</groupId>
+			  <artifactId>learner-service-facade</artifactId>
+		  </dependency>
+
+		  <!-- Http Libraries -->
+		  <dependency>
+			  <groupId>com.mashape.unirest</groupId>
+			  <artifactId>unirest-java</artifactId>
+		  </dependency>
+		  <dependency>
+			  <groupId>org.jsoup</groupId>
+			  <artifactId>jsoup</artifactId>
+		  </dependency>
+
+		  <dependency>
+			  <groupId>org.apache.commons</groupId>
+			  <artifactId>commons-text</artifactId>
+		  </dependency>
+
+		  <dependency>
+			  <groupId>commons-beanutils</groupId>
+			  <artifactId>commons-beanutils</artifactId>
+		  </dependency>
+
+		  <!-- Language Detector -->
+		  <dependency>
+			  <groupId>com.optimaize.languagedetector</groupId>
+			  <artifactId>language-detector</artifactId>
+		  </dependency>
+
+		  <!-- Commons -->
+		  <dependency>
+			  <groupId>com.google.guava</groupId>
+			  <artifactId>guava</artifactId>
+		  </dependency>
+		  <dependency>
+			  <groupId>org.mapdb</groupId>
+			  <artifactId>mapdb</artifactId>
+		  </dependency>
+		  <dependency>
+			  <groupId>commons-io</groupId>
+			  <artifactId>commons-io</artifactId>
+			  <version>${commons-io.version}</version>
+		  </dependency>
+
+		  <!-- Stanford CoreNLP -->
+		  <dependency>
+			  <groupId>edu.stanford.nlp</groupId>
+			  <artifactId>stanford-corenlp</artifactId>
+		  </dependency>
+		  <dependency>
+			  <groupId>edu.stanford.nlp</groupId>
+			  <artifactId>stanford-corenlp</artifactId>
+			  <classifier>models</classifier>
+		  </dependency>
+
+		  <!-- Google API -->
+		  <dependency>
+			  <groupId>com.google.cloud</groupId>
+			  <artifactId>google-cloud-translate</artifactId>
+		  </dependency>
+		  <dependency>
+			  <groupId>com.google.truth</groupId>
+			  <artifactId>truth</artifactId>
+		  </dependency>
+
+		  <!-- ML Libraries -->
+		  <dependency>
+			  <groupId>cc.mallet</groupId>
+			  <artifactId>mallet</artifactId>
+		  </dependency>
+
+		  <!-- JSON Serializer -->
+		  <dependency>
+			  <groupId>com.fasterxml.jackson.core</groupId>
+			  <artifactId>jackson-databind</artifactId>
+		  </dependency>
+
+		  <!-- Unit tests -->
+		  <dependency>
+			  <groupId>junit</groupId>
+			  <artifactId>junit</artifactId>
+			  <scope>test</scope>
+		  </dependency>
+
+		  <!-- Logging -->
+		  <dependency>
+			  <groupId>ch.qos.logback</groupId>
+			  <artifactId>logback-classic</artifactId>
+		  </dependency>
+		  <dependency>
+			  <groupId>ch.qos.logback</groupId>
+			  <artifactId>logback-core</artifactId>
+		  </dependency>
+
+	  </dependencies>
+
+	  <build>
+		  <resources>
+			  <resource>
+				  <directory>src/main/resources</directory>
+			  </resource>
+		  </resources>
+		  <finalName>${project.artifactId}</finalName>
+		  <plugins>
+
+			  <!-- Maven Compiler Plugin -->
+			  <plugin>
+				  <groupId>org.apache.maven.plugins</groupId>
+				  <artifactId>maven-compiler-plugin</artifactId>
+				  <version>${maven.compiler.plugin.version}</version>
+				  <configuration>
+					  <encoding>${project.build.sourceEncoding}</encoding>
+					  <source>${project.java.version}</source>
+					  <target>${project.java.version}</target>
+					  <compilerVersion>${project.java.version}</compilerVersion>
+				  </configuration>
+			  </plugin>
+
+			  <!-- Maven Test Plugin -->
+			  <plugin>
+				  <groupId>org.apache.maven.plugins</groupId>
+				  <artifactId>maven-surefire-plugin</artifactId>
+				  <version>2.11</version>
+				  <configuration>
+					  <excludes>
+						  <exclude>%regex[.*Workflow.*]</exclude>
+						  <exclude>%regex[.*Eval.*]</exclude>
+						  <exclude>%regex[.*Task.*]</exclude>
+					  </excludes>
+				  </configuration>
+			  </plugin>
+		  </plugins>
+	  </build>
+
+  </project>

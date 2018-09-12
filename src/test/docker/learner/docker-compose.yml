@@ -1,0 +1,13 @@
+version: '2'
+services:
+  learner-topics:
+    image: librairy/learner-topics-service:latest
+    ports:
+     - "7777:7777"
+    environment:
+      - LIBRAIRY_API_USERS=oeg:oeg2018
+      - JAVA_OPTS=-Xmx4192m
+      - REST_PATH=/topics
+      - NLP_ENDPOINT=http://librairy.linkeddata.es/%%
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
