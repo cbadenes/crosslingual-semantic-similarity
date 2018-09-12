@@ -332,4 +332,49 @@
 		  </plugins>
 	  </build>
 
+	<repositories>
+
+		<!-- librAIry Learner Repository -->
+		<repository>
+			<id>learner-service</id>
+			<url>https://raw.github.com/librairy/learner-service-facade/mvn-repo/</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+			</snapshots>
+		</repository>
+
+		<!-- librAIry Modeler Repository -->
+		<repository>
+			<id>modeler-service</id>
+			<url>https://raw.github.com/librairy/modeler-service-facade/mvn-repo/</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+			</snapshots>
+		</repository>
+
+		<!-- librAIry NLP Repository -->
+		<repository>
+			<id>nlp-service</id>
+			<url>https://raw.github.com/librairy/nlp-service-facade/mvn-repo/</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+			</snapshots>
+		</repository>
+
+
+		<!-- librAIry Swagger Repository -->
+		<repository>
+			<id>swagger</id>
+			<url>https://raw.github.com/librairy/swagger/mvn-repo/</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+			</snapshots>
+		</repository>
+
+	</repositories>
+
   </project>
