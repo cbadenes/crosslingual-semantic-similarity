@@ -43,13 +43,16 @@ public class ParsingBasedAlgorithmsEvaluation {
     private static BufferedWriter writer;
     private static String testId;
     private static ObjectMapper jsonMapper;
+    private static LibrairyService librairyService;
 
     @BeforeClass
     public static void setup() throws IOException {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd-HH_mm");
         testId = formatter.format(new Date());
-        writer = WriterUtils.to("reports/" + testId + ".json");
+        writer = WriterUtils.to("reports/" + testId + ".json.gz");
         jsonMapper = new ObjectMapper();
+        librairyService = new LibrairyService("http://librairy.linkeddata.es/cross-topics","oeg","oeg2018");
+        librairyService.reset();
     }
 
     @AfterClass
@@ -76,9 +79,6 @@ public class ParsingBasedAlgorithmsEvaluation {
         if (Strings.isNullOrEmpty(dockerHubPwd)) throw new RuntimeException("DockerHub credentials required");
 
         ObjectMapper mapper = new ObjectMapper();
-
-        LibrairyService librairyService = new LibrairyService("http://librairy.linkeddata.es/cross-topics","oeg","oeg2018");
-        librairyService.reset();
 
         BufferedReader trainReader = ReaderUtils.from(CorpusSplitTrainAndTest.TRAIN_DATASET);
 
@@ -109,10 +109,12 @@ public class ParsingBasedAlgorithmsEvaluation {
             if (counter.incrementAndGet() % 100 == 0) LOG.info(counter.get() + " papers added");
 
         }
+        trainReader.close();
+
 
         Map<String, String> parameters = new HashMap<>();
         parameters.put("topics","5");
-        parameters.put("iterations","10");
+        parameters.put("iterations","1000");
         parameters.put("alpha","0.1");
         parameters.put("beta","0.01");
         parameters.put("language",LANGUAGE);
@@ -122,18 +124,32 @@ public class ParsingBasedAlgorithmsEvaluation {
         parameters.put("maxdocratio","0.95");
         parameters.put("raw","true");
 
+
+        return Arrays.asList(20,50,100,200,500).stream().flatMap( topics -> {
+            parameters.put("topics",String.valueOf(topics));
+            return trainAndTest(parameters, parserAlgorithm).stream();
+        }).collect(Collectors.toList());
+
+
+    }
+
+
+    private List<Evaluation> trainAndTest(Map<String, String> parameters, Parser parserAlgorithm) {
+
         LOG.info("Training a Topic Model by " + parameters);
 
         librairyService.train(parameters);
 
-        trainReader.close();
+
         LOG.info("waiting for complete ..");
         while(!librairyService.isCompleted()){
-            Thread.sleep(2000);
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         LOG.info("Topic Model created!!");
-
-        //TODO export model
 
         Map<String,String> dockerHubParameters = new HashMap<>();
         dockerHubParameters.put("contactEmail","cbadenes@fi.upm.es");
@@ -148,116 +164,140 @@ public class ParsingBasedAlgorithmsEvaluation {
         dockerHubParameters.put("licenseName","Apache License Version 2.0");
         dockerHubParameters.put("licenseUrl","https://www.apache.org/licenses/LICENSE-2.0");
 
+        librairyService.export(dockerHubParameters);
 
 
-        BufferedReader testReader = ReaderUtils.from(CorpusSplitTrainAndTest.TEST_DATASET);
+        BufferedReader testReader = null;
+        try {
+            testReader = ReaderUtils.from(CorpusSplitTrainAndTest.TEST_DATASET);
+            Map<String,List<Double>> space = new ConcurrentHashMap<>();
 
-        Map<String,List<Double>> space = new ConcurrentHashMap<>();
+            AtomicInteger counter = new AtomicInteger();
+            String line;
+            ParallelExecutor shapeExecutor = new ParallelExecutor();
+            LOG.info("Getting vectorial representation of papers at: '" + CorpusSplitTrainAndTest.TEST_DATASET+ "' ..");
+            while ((line = testReader.readLine()) != null){
 
-        counter.set(0);
-        ParallelExecutor shapeExecutor = new ParallelExecutor();
-        LOG.info("Getting vectorial representation of papers at: '" + CorpusSplitTrainAndTest.TEST_DATASET+ "' ..");
-        while ((line = testReader.readLine()) != null){
+                final JsonNode json = jsonMapper.readTree(line);
 
-            final JsonNode json = mapper.readTree(line);
+                shapeExecutor.submit(() -> {
+                    String id   = json.get("id").asText();
+                    LOG.info("shape of " + id);
+                    String text = json.get("articles").get(LANGUAGE).get("description").asText() + " " + json.get("articles").get(LANGUAGE).get("content").asText();
 
-//            shapeExecutor.submit(() -> {
-                String id   = json.get("id").asText();
-                LOG.info("shape of " + id);
-                String text = json.get("articles").get(LANGUAGE).get("description").asText() + " " + json.get("articles").get(LANGUAGE).get("content").asText();
+                    ShapeRequest request = new ShapeRequest();
+                    request.setText(parserAlgorithm.parse(text));
+                    Shape shape = librairyService.inference(request);
+                    space.put(id,shape.getVector());
 
-                ShapeRequest request = new ShapeRequest();
-                request.setText(parserAlgorithm.parse(text));
-                Shape shape = librairyService.inference(request);
-                space.put(id,shape.getVector());
+                    if (counter.incrementAndGet() % 100 == 0) LOG.info(counter.get() + " papers shaped");
 
-                if (counter.incrementAndGet() % 100 == 0) LOG.info(counter.get() + " papers shaped");
-
-//            });
+                });
 
 
-        }
-//        shapeExecutor.awaitTermination(1, TimeUnit.HOURS);
-        testReader.close();
-
-        LOG.info("Getting relations between papers from gold-standard (>"+CorpusSplitTrainAndTest.THRESHOLD + ") ..");
-
-        Map<String,Set<String>> goldStandard = new HashMap<>();
-
-        BufferedReader simReader = ReaderUtils.from(CorpusPrepare.PATH);
-        ParallelExecutor relExecutor = new ParallelExecutor();
-        while ((line = simReader.readLine()) != null){
-            final Relation relation = mapper.readValue(line, Relation.class);
-            relExecutor.submit(() -> {
-                if (relation.getScore() > CorpusSplitTrainAndTest.THRESHOLD){
-
-                    // add y to x
-                    Set<String> simPapers = new TreeSet<>();
-
-                    if (goldStandard.containsKey(relation.getX())){
-                        simPapers =  goldStandard.get(relation.getX());
-                    }
-
-                    simPapers.add(relation.getY());
-                    goldStandard.put(relation.getX(), simPapers);
-
-                    // add x to y
-                    simPapers = new TreeSet<>();
-
-                    if (goldStandard.containsKey(relation.getY())){
-                        simPapers =  goldStandard.get(relation.getY());
-                    }
-
-                    simPapers.add(relation.getX());
-                    goldStandard.put(relation.getY(), simPapers);
-
-                }
-
-            });
-        }
-
-        relExecutor.awaitTermination(1, TimeUnit.HOURS);
-
-        LOG.info("Analyzing results");
-
-        List<Evaluation> evaluations = Arrays.asList(1, 5, 10, 20, 50).stream().map(n -> new Evaluation(n, parameters)).collect(Collectors.toList());
-
-        counter.set(0);
-
-        ParallelExecutor evalExecutor = new ParallelExecutor();
-
-        for (String id : space.keySet()){
-
-            evalExecutor.submit(() -> {
-                List<String> relatedPapers = new ArrayList<>(goldStandard.get(id));
-
-                List<Double> vector = space.get(id);
-
-                List<String> calculatedRelatedPapers = space.entrySet().stream().filter(entry -> !entry.getKey().equalsIgnoreCase(id)).map(entry -> new Relation("sim", id, entry.getKey(), JensenShannon.similarity(vector, entry.getValue()))).filter(rel -> rel.getScore() > CorpusSplitTrainAndTest.THRESHOLD).sorted((a, b) -> -a.getScore().compareTo(b.getScore())).limit(50).map(rel -> rel.getY()).collect(Collectors.toList());
-
-                evaluations.forEach( evaluation -> evaluation.addResult(relatedPapers, calculatedRelatedPapers.subList(0, evaluation.getN())));
-
-                if (counter.incrementAndGet() % 10 == 0) LOG.info(counter.get() + " papers evaluated");
-            });
-
-        }
-
-        evalExecutor.awaitTermination(1, TimeUnit.HOURS);
-
-        evaluations.forEach(evaluation -> LOG.info("Accuracy@" + evaluation.getN() + " -> " + evaluation));
-
-        evaluations.stream().map(evaluation -> evaluation.setAlgorithm(parserAlgorithm.id()).setTestId(testId)).forEach(eval -> {
-            try {
-                LOG.info(""+eval);
-                writer.write(jsonMapper.writeValueAsString(eval) + "\n");
-            } catch (IOException e) {
-                e.printStackTrace();
             }
-        });
+            shapeExecutor.awaitTermination(1, TimeUnit.HOURS);
+            testReader.close();
 
-        return evaluations;
+            return Arrays.asList(0.6,0.7,0.8,0.9,0.95).stream().flatMap(threshold -> {
+                parameters.put("threshold",String.valueOf(threshold));
+                return test(space,parserAlgorithm,parameters).stream();
+            }).collect(Collectors.toList());
+        } catch (Exception e) {
+            LOG.error("Unexpected Error");
+            return Collections.emptyList();
+        }
+
 
     }
 
+    private List<Evaluation> test(Map<String,List<Double>> space, Parser algorithm, Map<String,String> parameters)  {
+
+        Double threshold = Double.valueOf(parameters.get("threshold"));
+        LOG.info("Getting relations between papers from gold-standard (>"+threshold + ") ..");
+
+        Map<String,Set<String>> goldStandard = new HashMap<>();
+
+        String line;
+        BufferedReader simReader = null;
+        try {
+            simReader = ReaderUtils.from(CorpusPrepare.PATH);
+            ParallelExecutor relExecutor = new ParallelExecutor();
+            while ((line = simReader.readLine()) != null){
+                final Relation relation = jsonMapper.readValue(line, Relation.class);
+                relExecutor.submit(() -> {
+                    if (relation.getScore() > threshold){
+
+                        // add y to x
+                        Set<String> simPapers = new TreeSet<>();
+
+                        if (goldStandard.containsKey(relation.getX())){
+                            simPapers =  goldStandard.get(relation.getX());
+                        }
+
+                        simPapers.add(relation.getY());
+                        goldStandard.put(relation.getX(), simPapers);
+
+                        // add x to y
+                        simPapers = new TreeSet<>();
+
+                        if (goldStandard.containsKey(relation.getY())){
+                            simPapers =  goldStandard.get(relation.getY());
+                        }
+
+                        simPapers.add(relation.getX());
+                        goldStandard.put(relation.getY(), simPapers);
+
+                    }
+
+                });
+            }
+
+            relExecutor.awaitTermination(1, TimeUnit.HOURS);
+
+            LOG.info("Analyzing results");
+
+            List<Evaluation> evaluations = Arrays.asList(1, 5, 10, 20, 50).stream().map(n -> new Evaluation(n, parameters)).collect(Collectors.toList());
+
+            AtomicInteger counter = new AtomicInteger();
+
+            ParallelExecutor evalExecutor = new ParallelExecutor();
+
+            for (String id : space.keySet()){
+
+                evalExecutor.submit(() -> {
+                    List<String> relatedPapers = new ArrayList<>(goldStandard.get(id));
+
+                    List<Double> vector = space.get(id);
+
+                    List<String> calculatedRelatedPapers = space.entrySet().stream().filter(entry -> !entry.getKey().equalsIgnoreCase(id)).map(entry -> new Relation("sim", id, entry.getKey(), JensenShannon.similarity(vector, entry.getValue()))).filter(rel -> rel.getScore() > CorpusSplitTrainAndTest.THRESHOLD).sorted((a, b) -> -a.getScore().compareTo(b.getScore())).limit(50).map(rel -> rel.getY()).collect(Collectors.toList());
+
+                    evaluations.forEach( evaluation -> evaluation.addResult(relatedPapers, calculatedRelatedPapers.subList(0, evaluation.getN())));
+
+                    if (counter.incrementAndGet() % 10 == 0) LOG.info(counter.get() + " papers evaluated");
+                });
+
+            }
+
+            evalExecutor.awaitTermination(1, TimeUnit.HOURS);
+
+            evaluations.forEach(evaluation -> LOG.info("Accuracy@" + evaluation.getN() + " -> " + evaluation));
+
+            evaluations.stream().map(evaluation -> evaluation.setAlgorithm(algorithm.id()).setTestId(testId)).forEach(eval -> {
+                try {
+                    LOG.info(""+eval);
+                    writer.write(jsonMapper.writeValueAsString(eval) + "\n");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+
+            return evaluations;
+        } catch (Exception e) {
+            LOG.error("Unexpected error",e);
+            return Collections.emptyList();
+        }
+
+    }
 
 }
