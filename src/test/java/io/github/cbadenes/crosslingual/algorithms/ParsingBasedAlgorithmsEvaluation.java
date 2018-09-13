@@ -2,6 +2,7 @@ package io.github.cbadenes.crosslingual.algorithms;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.repackaged.com.google.common.base.Strings;
 import io.github.cbadenes.crosslingual.data.Evaluation;
 import io.github.cbadenes.crosslingual.data.Relation;
 import io.github.cbadenes.crosslingual.metrics.JensenShannon;
@@ -10,6 +11,9 @@ import io.github.cbadenes.crosslingual.tasks.CorpusPrepare;
 import io.github.cbadenes.crosslingual.tasks.CorpusSplitTrainAndTest;
 import io.github.cbadenes.crosslingual.utils.ParallelExecutor;
 import io.github.cbadenes.crosslingual.utils.ReaderUtils;
+import io.github.cbadenes.crosslingual.utils.WriterUtils;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.librairy.service.learner.facade.rest.model.Document;
 import org.librairy.service.modeler.facade.rest.model.Shape;
@@ -18,7 +22,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -29,26 +35,45 @@ import java.util.stream.Collectors;
  * @author Badenes Olmedo, Carlos <cbadenes@fi.upm.es>
  */
 
-public class ParsingBasedAlgorithmsTest {
+public class ParsingBasedAlgorithmsEvaluation {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ParsingBasedAlgorithmsTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ParsingBasedAlgorithmsEvaluation.class);
 
     private static final String LANGUAGE = "en";
+    private static BufferedWriter writer;
+    private static String testId;
+    private static ObjectMapper jsonMapper;
 
+    @BeforeClass
+    public static void setup() throws IOException {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd-HH_mm");
+        testId = formatter.format(new Date());
+        writer = WriterUtils.to("reports/" + testId + ".json");
+        jsonMapper = new ObjectMapper();
+    }
+
+    @AfterClass
+    public static void shutdown() throws IOException {
+        writer.close();
+    }
 
     @Test
     public void raw() throws IOException, InterruptedException {
-        eval(new RawParser());
+        eval(new WordBasedParser());
     }
 
     @Test
     public void lemma() throws IOException, InterruptedException {
-        eval(new LemmaParser());
+        eval(new LemmaBasedParser());
     }
 
 
 
-    private void eval(Parser parserAlgorithm) throws IOException, InterruptedException {
+    private List<Evaluation> eval(Parser parserAlgorithm) throws IOException, InterruptedException {
+
+        String dockerHubPwd = System.getenv("DOCKERHUB_PWD");
+
+        if (Strings.isNullOrEmpty(dockerHubPwd)) throw new RuntimeException("DockerHub credentials required");
 
         ObjectMapper mapper = new ObjectMapper();
 
@@ -61,6 +86,7 @@ public class ParsingBasedAlgorithmsTest {
 
         AtomicInteger counter = new AtomicInteger();
         LOG.info("Training a Topic Model from papers at: '" + CorpusSplitTrainAndTest.TRAIN_DATASET+ "' ..");
+        Set<String> keywords = new TreeSet<>();
         while ((line = trainReader.readLine()) != null){
 
             JsonNode json = mapper.readTree(line);
@@ -68,8 +94,11 @@ public class ParsingBasedAlgorithmsTest {
             String id = json.get("id").asText();
             String name = json.get("articles").get(LANGUAGE).get("title").asText();
             String text = json.get("articles").get(LANGUAGE).get("description").asText() + " " + json.get("articles").get(LANGUAGE).get("content").asText();
-
-
+            Iterator<JsonNode> it = json.get("articles").get(LANGUAGE).withArray("keywords").iterator();
+            while(it.hasNext()){
+                String kw = it.next().asText().trim().toLowerCase();
+                keywords.add(kw);
+            }
 
             Document document = new Document();
             document.setId(id);
@@ -82,8 +111,8 @@ public class ParsingBasedAlgorithmsTest {
         }
 
         Map<String, String> parameters = new HashMap<>();
-        parameters.put("topics","100");
-        parameters.put("iterations","1000");
+        parameters.put("topics","5");
+        parameters.put("iterations","10");
         parameters.put("alpha","0.1");
         parameters.put("beta","0.01");
         parameters.put("language",LANGUAGE);
@@ -92,6 +121,9 @@ public class ParsingBasedAlgorithmsTest {
         parameters.put("minfreq","5");
         parameters.put("maxdocratio","0.95");
         parameters.put("raw","true");
+
+        LOG.info("Training a Topic Model by " + parameters);
+
         librairyService.train(parameters);
 
         trainReader.close();
@@ -102,6 +134,21 @@ public class ParsingBasedAlgorithmsTest {
         LOG.info("Topic Model created!!");
 
         //TODO export model
+
+        Map<String,String> dockerHubParameters = new HashMap<>();
+        dockerHubParameters.put("contactEmail","cbadenes@fi.upm.es");
+        dockerHubParameters.put("contactName","Carlos Badenes-Olmedo");
+        dockerHubParameters.put("contactUrl","http://cbadenes.github.io/");
+        dockerHubParameters.put("credentials.email","cbadenes@gmail.com");
+        dockerHubParameters.put("credentials.password","");
+        dockerHubParameters.put("credentials.repository","cbadenes/cross-"+parserAlgorithm.id()+":"+testId);
+        dockerHubParameters.put("credentials.username","cbadenes");
+        dockerHubParameters.put("description","Topic Model created from a Parallel Corpus by using a " + parserAlgorithm.id() + " parser algorithm");
+        dockerHubParameters.put("title","Cross-lingual Topic Model by " + parserAlgorithm.id());
+        dockerHubParameters.put("licenseName","Apache License Version 2.0");
+        dockerHubParameters.put("licenseUrl","https://www.apache.org/licenses/LICENSE-2.0");
+
+
 
         BufferedReader testReader = ReaderUtils.from(CorpusSplitTrainAndTest.TEST_DATASET);
 
@@ -173,10 +220,7 @@ public class ParsingBasedAlgorithmsTest {
 
         LOG.info("Analyzing results");
 
-        Evaluation eval1    = new Evaluation();
-        Evaluation eval5    = new Evaluation();
-        Evaluation eval10   = new Evaluation();
-        Evaluation eval20   = new Evaluation();
+        List<Evaluation> evaluations = Arrays.asList(1, 5, 10, 20, 50).stream().map(n -> new Evaluation(n, parameters)).collect(Collectors.toList());
 
         counter.set(0);
 
@@ -191,10 +235,7 @@ public class ParsingBasedAlgorithmsTest {
 
                 List<String> calculatedRelatedPapers = space.entrySet().stream().filter(entry -> !entry.getKey().equalsIgnoreCase(id)).map(entry -> new Relation("sim", id, entry.getKey(), JensenShannon.similarity(vector, entry.getValue()))).filter(rel -> rel.getScore() > CorpusSplitTrainAndTest.THRESHOLD).sorted((a, b) -> -a.getScore().compareTo(b.getScore())).limit(50).map(rel -> rel.getY()).collect(Collectors.toList());
 
-                eval1.addResult(relatedPapers, calculatedRelatedPapers.subList(0,1));
-                eval5.addResult(relatedPapers, calculatedRelatedPapers.subList(0,5));
-                eval10.addResult(relatedPapers, calculatedRelatedPapers.subList(0,10));
-                eval20.addResult(relatedPapers, calculatedRelatedPapers.subList(0,20));
+                evaluations.forEach( evaluation -> evaluation.addResult(relatedPapers, calculatedRelatedPapers.subList(0, evaluation.getN())));
 
                 if (counter.incrementAndGet() % 10 == 0) LOG.info(counter.get() + " papers evaluated");
             });
@@ -203,11 +244,18 @@ public class ParsingBasedAlgorithmsTest {
 
         evalExecutor.awaitTermination(1, TimeUnit.HOURS);
 
-        LOG.info("Accuracy@1 -> " + eval1);
-        LOG.info("Accuracy@5 -> " + eval5);
-        LOG.info("Accuracy@10 -> " + eval10);
-        LOG.info("Accuracy@20 -> " + eval20);
+        evaluations.forEach(evaluation -> LOG.info("Accuracy@" + evaluation.getN() + " -> " + evaluation));
 
+        evaluations.stream().map(evaluation -> evaluation.setAlgorithm(parserAlgorithm.id()).setTestId(testId)).forEach(eval -> {
+            try {
+                LOG.info(""+eval);
+                writer.write(jsonMapper.writeValueAsString(eval) + "\n");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        return evaluations;
 
     }
 

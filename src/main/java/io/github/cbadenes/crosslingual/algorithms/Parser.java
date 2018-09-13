@@ -5,6 +5,8 @@ package io.github.cbadenes.crosslingual.algorithms;
  */
 public interface Parser {
 
+    String id();
+
     String parse(String text);
 
 }

@@ -78,6 +78,12 @@
 				  <artifactId>learner-service-facade</artifactId>
 				  <version>${librairy.version}</version>
 			  </dependency>
+			  <dependency>
+				  <groupId>org.librairy</groupId>
+				  <artifactId>nlp-service-facade</artifactId>
+				  <version>${librairy.version}</version>
+			  </dependency>
+
 
 			  <!-- Http Libraries -->
 			  <dependency>
@@ -199,6 +205,10 @@
 		  <dependency>
 			  <groupId>org.librairy</groupId>
 			  <artifactId>learner-service-facade</artifactId>
+		  </dependency>
+		  <dependency>
+			  <groupId>org.librairy</groupId>
+			  <artifactId>nlp-service-facade</artifactId>
 		  </dependency>
 
 		  <!-- Http Libraries -->
@@ -324,7 +334,7 @@
 				  <configuration>
 					  <excludes>
 						  <exclude>%regex[.*Workflow.*]</exclude>
-						  <exclude>%regex[.*Eval.*]</exclude>
+						  <exclude>%regex[.*Evaluation.*]</exclude>
 						  <exclude>%regex[.*Task.*]</exclude>
 					  </excludes>
 				  </configuration>

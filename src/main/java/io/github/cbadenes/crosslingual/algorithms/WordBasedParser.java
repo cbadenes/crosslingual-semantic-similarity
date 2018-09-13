@@ -7,10 +7,15 @@ import org.slf4j.LoggerFactory;
  * @author Badenes Olmedo, Carlos <cbadenes@fi.upm.es>
  */
 
-public class RawParser implements Parser {
+public class WordBasedParser implements Parser {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RawParser.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WordBasedParser.class);
 
+
+    @Override
+    public String id() {
+        return "WordBased";
+    }
 
     @Override
     public String parse(String text) {
