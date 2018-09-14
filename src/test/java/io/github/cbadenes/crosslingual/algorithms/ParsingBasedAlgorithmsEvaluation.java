@@ -67,7 +67,12 @@ public class ParsingBasedAlgorithmsEvaluation {
 
     @Test
     public void lemma() throws IOException, InterruptedException {
-        eval(new LemmaBasedParser());
+        eval(new LemmaNounBasedParser());
+    }
+
+    @Test
+    public void lemmaVerb() throws IOException, InterruptedException {
+        eval(new LemmaNounVerbsBasedParser());
     }
 
 

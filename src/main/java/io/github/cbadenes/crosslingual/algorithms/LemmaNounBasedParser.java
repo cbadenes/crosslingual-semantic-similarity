@@ -3,7 +3,6 @@ package io.github.cbadenes.crosslingual.algorithms;
 import com.google.common.base.Optional;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.exceptions.UnirestException;
 import com.optimaize.langdetect.LanguageDetector;
 import com.optimaize.langdetect.LanguageDetectorBuilder;
 import com.optimaize.langdetect.i18n.LdLocale;
@@ -14,11 +13,8 @@ import com.optimaize.langdetect.profiles.LanguageProfileReader;
 import com.optimaize.langdetect.text.CommonTextObjectFactories;
 import com.optimaize.langdetect.text.TextObject;
 import com.optimaize.langdetect.text.TextObjectFactory;
-import io.github.cbadenes.crosslingual.services.LibrairyService;
 import org.librairy.service.nlp.facade.model.Form;
 import org.librairy.service.nlp.facade.model.PoS;
-import org.librairy.service.nlp.facade.rest.model.AnnotationsRequest;
-import org.librairy.service.nlp.facade.rest.model.AnnotationsResult;
 import org.librairy.service.nlp.facade.rest.model.TokensRequest;
 import org.librairy.service.nlp.facade.rest.model.TokensResult;
 import org.slf4j.Logger;
@@ -29,19 +25,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author Badenes Olmedo, Carlos <cbadenes@fi.upm.es>
  */
 
-public class LemmaBasedParser implements Parser {
+public class LemmaNounBasedParser implements Parser {
 
-    private static final Logger LOG = LoggerFactory.getLogger(LemmaBasedParser.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LemmaNounBasedParser.class);
     private final LanguageDetector languageDetector;
     private final TextObjectFactory textObjectFactory;
 
-    public LemmaBasedParser() throws IOException {
+    public LemmaNounBasedParser() throws IOException {
         LanguageProfileReader langReader = new LanguageProfileReader();
 
         List<LanguageProfile> languageProfiles = new ArrayList<>();
