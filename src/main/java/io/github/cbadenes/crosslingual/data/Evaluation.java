@@ -110,7 +110,7 @@ public class Evaluation {
 
     @Override
     public String toString() {
-        return "Evaluation@\"+n+\"{" +
+        return "Evaluation@"+n+"{" +
                 "algorithm="+algorithm+
                 ", truePositive=" + truePositive +
                 ", falsePositive=" + falsePositive +

@@ -87,9 +87,9 @@ public class LemmaBasedParser implements Parser {
 
             return response.getBody().getAnnotatedText().stream().map(ann -> ann.getToken().getLemma()).collect(Collectors.joining(" "));
 
-        } catch (UnirestException e) {
+        } catch (Exception e) {
             LOG.error("Unexpected error",e);
-            throw new RuntimeException(e);
+            return text;
         }
 
     }
