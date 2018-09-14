@@ -157,7 +157,7 @@ public class ParsingBasedAlgorithmsEvaluation {
         dockerHubParameters.put("contactUrl","http://cbadenes.github.io/");
         dockerHubParameters.put("credentials.email","cbadenes@gmail.com");
         dockerHubParameters.put("credentials.password","");
-        dockerHubParameters.put("credentials.repository","cbadenes/cross-"+parserAlgorithm.id()+":"+testId);
+        dockerHubParameters.put("credentials.repository","cbadenes/cross-"+parserAlgorithm.id()+":"+testId+"_"+parameters.get("topics"));
         dockerHubParameters.put("credentials.username","cbadenes");
         dockerHubParameters.put("description","Topic Model created from a Parallel Corpus by using a " + parserAlgorithm.id() + " parser algorithm");
         dockerHubParameters.put("title","Cross-lingual Topic Model by " + parserAlgorithm.id());
@@ -166,6 +166,7 @@ public class ParsingBasedAlgorithmsEvaluation {
 
         librairyService.export(dockerHubParameters);
 
+        LOG.info("Docker image created and exported to: " + dockerHubParameters.get("credentials.repository"));
 
         BufferedReader testReader = null;
         try {
@@ -257,7 +258,7 @@ public class ParsingBasedAlgorithmsEvaluation {
 
             LOG.info("Analyzing results");
 
-            List<Evaluation> evaluations = Arrays.asList(1, 5, 10, 20, 50).stream().map(n -> new Evaluation(n, parameters)).collect(Collectors.toList());
+            List<Evaluation> evaluations = Arrays.asList(1, 5, 10, 20, 50).stream().map(n -> new Evaluation(n, parameters, algorithm.id())).collect(Collectors.toList());
 
             AtomicInteger counter = new AtomicInteger();
 
@@ -274,14 +275,15 @@ public class ParsingBasedAlgorithmsEvaluation {
 
                     evaluations.forEach( evaluation -> evaluation.addResult(relatedPapers, calculatedRelatedPapers.subList(0, evaluation.getN())));
 
-                    if (counter.incrementAndGet() % 10 == 0) LOG.info(counter.get() + " papers evaluated");
+                    if (counter.incrementAndGet() % 100 == 0) LOG.info(counter.get() + " papers evaluated");
                 });
 
             }
+            LOG.info(counter.get() + " papers evaluated");
 
             evalExecutor.awaitTermination(1, TimeUnit.HOURS);
 
-            evaluations.forEach(evaluation -> LOG.info("Accuracy@" + evaluation.getN() + " -> " + evaluation));
+//            evaluations.forEach(evaluation -> LOG.info("Accuracy@" + evaluation.getN() + " -> " + evaluation));
 
             evaluations.stream().map(evaluation -> evaluation.setAlgorithm(algorithm.id()).setTestId(testId)).forEach(eval -> {
                 try {

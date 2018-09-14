@@ -15,9 +15,12 @@ import com.optimaize.langdetect.text.CommonTextObjectFactories;
 import com.optimaize.langdetect.text.TextObject;
 import com.optimaize.langdetect.text.TextObjectFactory;
 import io.github.cbadenes.crosslingual.services.LibrairyService;
+import org.librairy.service.nlp.facade.model.Form;
 import org.librairy.service.nlp.facade.model.PoS;
 import org.librairy.service.nlp.facade.rest.model.AnnotationsRequest;
 import org.librairy.service.nlp.facade.rest.model.AnnotationsResult;
+import org.librairy.service.nlp.facade.rest.model.TokensRequest;
+import org.librairy.service.nlp.facade.rest.model.TokensResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,19 +76,19 @@ public class LemmaBasedParser implements Parser {
         try {
             String lang = getLanguageFrom(text);
 
-            AnnotationsRequest request = new AnnotationsRequest();
+            TokensRequest request = new TokensRequest();
             request.setText(text);
             request.setFilter(Arrays.asList(PoS.NOUN));
             request.setMultigrams(false);
-            request.setReferences(false);
+            request.setForm(Form.LEMMA);
 
-            HttpResponse<AnnotationsResult> response = Unirest.post("http://librairy.linkeddata.es/"+lang+"/annotations").body(request).asObject(AnnotationsResult.class);
+            HttpResponse<TokensResult> response = Unirest.post("http://librairy.linkeddata.es/"+lang+"/tokens").body(request).asObject(TokensResult.class);
 
             if (response.getStatus() != 200 && response.getStatus() != 201){
                 throw new RuntimeException();
             }
 
-            return response.getBody().getAnnotatedText().stream().map(ann -> ann.getToken().getLemma()).collect(Collectors.joining(" "));
+            return response.getBody().getTokens();
 
         } catch (Exception e) {
             LOG.error("Unexpected error",e);

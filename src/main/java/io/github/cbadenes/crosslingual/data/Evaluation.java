@@ -56,6 +56,12 @@ public class Evaluation {
         this.parameters = parameters;
     }
 
+    public Evaluation(Integer n, Map<String, String> parameters, String algorithm) {
+        this.n = n;
+        this.parameters = parameters;
+        this.algorithm = algorithm;
+    }
+
     public Evaluation() {
     }
 
@@ -93,6 +99,7 @@ public class Evaluation {
     public Double getFMeasure() {
         Double precision = getPrecision();
         Double recall = getRecall();
+        if ((precision == 0.0) && (recall == 0.0)) return 0.0;
         return 2 * (precision * recall) / (precision + recall);
     }
 
