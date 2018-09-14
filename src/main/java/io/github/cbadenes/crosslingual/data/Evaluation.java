@@ -55,8 +55,7 @@ public class Evaluation {
         this.testSet = testSet;
         this.parser = parser;
 
-        //librairyService = new LibrairyService("http://librairy.linkeddata.es/cross-topics","oeg","oeg2018");
-        librairyService = new LibrairyService("http://localhost:7777","oeg","oeg2018");
+        librairyService = new LibrairyService("http://librairy.linkeddata.es/cross-topics","oeg","oeg2018");
         librairyService.reset();
 
 
