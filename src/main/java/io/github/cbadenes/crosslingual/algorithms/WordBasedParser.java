@@ -21,4 +21,9 @@ public class WordBasedParser implements Parser {
     public String parse(String text) {
         return text.replaceAll(";"," "); // special character for librAIry
     }
+
+    @Override
+    public String language() {
+        return "en";
+    }
 }

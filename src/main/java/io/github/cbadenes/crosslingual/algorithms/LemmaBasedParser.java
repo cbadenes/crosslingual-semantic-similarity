@@ -30,13 +30,16 @@ import java.util.List;
  * @author Badenes Olmedo, Carlos <cbadenes@fi.upm.es>
  */
 
-public class LemmaNounBasedParser implements Parser {
+public class LemmaBasedParser implements Parser {
 
-    private static final Logger LOG = LoggerFactory.getLogger(LemmaNounBasedParser.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LemmaBasedParser.class);
     private final LanguageDetector languageDetector;
     private final TextObjectFactory textObjectFactory;
+    private final List<PoS> posList;
 
-    public LemmaNounBasedParser() throws IOException {
+    public LemmaBasedParser(List<PoS> posList) throws IOException {
+        this.posList = posList;
+        Unirest.setTimeouts(10000, 90000);
         LanguageProfileReader langReader = new LanguageProfileReader();
 
         List<LanguageProfile> languageProfiles = new ArrayList<>();
@@ -63,7 +66,7 @@ public class LemmaNounBasedParser implements Parser {
 
     @Override
     public String id() {
-        return "LemmaBased";
+        return "LemmaBased["+posList+"]";
     }
 
     @Override
@@ -73,7 +76,7 @@ public class LemmaNounBasedParser implements Parser {
 
             TokensRequest request = new TokensRequest();
             request.setText(text);
-            request.setFilter(Arrays.asList(PoS.NOUN));
+            request.setFilter(posList);
             request.setMultigrams(false);
             request.setForm(Form.LEMMA);
 
@@ -90,6 +93,11 @@ public class LemmaNounBasedParser implements Parser {
             return text;
         }
 
+    }
+
+    @Override
+    public String language() {
+        return "en";
     }
 
     private String getLanguageFrom(String text){

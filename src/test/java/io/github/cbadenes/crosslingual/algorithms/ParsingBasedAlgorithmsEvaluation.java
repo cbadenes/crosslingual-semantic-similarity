@@ -1,35 +1,26 @@
 package io.github.cbadenes.crosslingual.algorithms;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.repackaged.com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
+import io.github.cbadenes.crosslingual.data.AccuracyReport;
 import io.github.cbadenes.crosslingual.data.Evaluation;
-import io.github.cbadenes.crosslingual.data.Relation;
-import io.github.cbadenes.crosslingual.metrics.JensenShannon;
 import io.github.cbadenes.crosslingual.services.LibrairyService;
-import io.github.cbadenes.crosslingual.tasks.CorpusPrepare;
 import io.github.cbadenes.crosslingual.tasks.CorpusSplitTrainAndTest;
-import io.github.cbadenes.crosslingual.utils.ParallelExecutor;
-import io.github.cbadenes.crosslingual.utils.ReaderUtils;
 import io.github.cbadenes.crosslingual.utils.WriterUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.librairy.service.learner.facade.rest.model.Document;
-import org.librairy.service.modeler.facade.rest.model.Shape;
-import org.librairy.service.modeler.facade.rest.model.ShapeRequest;
+import org.librairy.service.nlp.facade.model.PoS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author Badenes Olmedo, Carlos <cbadenes@fi.upm.es>
@@ -39,20 +30,37 @@ public class ParsingBasedAlgorithmsEvaluation {
 
     private static final Logger LOG = LoggerFactory.getLogger(ParsingBasedAlgorithmsEvaluation.class);
 
-    private static final String LANGUAGE = "en";
     private static BufferedWriter writer;
     private static String testId;
     private static ObjectMapper jsonMapper;
     private static LibrairyService librairyService;
+    private static List tests;
+    private static List evals;
 
     @BeforeClass
     public static void setup() throws IOException {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd-HH_mm");
-        testId = formatter.format(new Date());
-        writer = WriterUtils.to("reports/" + testId + ".json.gz");
         jsonMapper = new ObjectMapper();
-        librairyService = new LibrairyService("http://librairy.linkeddata.es/cross-topics","oeg","oeg2018");
-        librairyService.reset();
+
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmm");
+        testId = formatter.format(new Date());
+
+        writer = WriterUtils.to("reports/" + testId + ".json.gz");
+
+
+        tests = new ArrayList();
+        tests.add(ImmutableMap.of("topics","10","iterations","1000"));
+        tests.add(ImmutableMap.of("topics","50","iterations","1000"));
+        tests.add(ImmutableMap.of("topics","100","iterations","1000"));
+        tests.add(ImmutableMap.of("topics","500","iterations","1000"));
+
+        evals = new ArrayList<>();
+        evals.add(ImmutableMap.of("gold-threshold","0.6","threshold","0.6"));
+        evals.add(ImmutableMap.of("gold-threshold","0.7","threshold","0.7"));
+        evals.add(ImmutableMap.of("gold-threshold","0.8","threshold","0.8"));
+        evals.add(ImmutableMap.of("gold-threshold","0.9","threshold","0.9"));
+        evals.add(ImmutableMap.of("gold-threshold","0.6","threshold","0.7"));
+        evals.add(ImmutableMap.of("gold-threshold","0.6","threshold","0.8"));
+        evals.add(ImmutableMap.of("gold-threshold","0.6","threshold","0.9"));
     }
 
     @AfterClass
@@ -62,249 +70,23 @@ public class ParsingBasedAlgorithmsEvaluation {
 
     @Test
     public void raw() throws IOException, InterruptedException {
-        eval(new WordBasedParser());
+        evaluate(new WordBasedParser());
     }
 
     @Test
     public void lemma() throws IOException, InterruptedException {
-        eval(new LemmaNounBasedParser());
+        evaluate(new LemmaBasedParser(Arrays.asList(PoS.NOUN)));
     }
 
     @Test
     public void lemmaVerb() throws IOException, InterruptedException {
-        eval(new LemmaNounVerbsBasedParser());
+        evaluate(new LemmaBasedParser(Arrays.asList(PoS.NOUN,PoS.VERB, PoS.ADJECTIVE)));
     }
 
-
-
-    private List<Evaluation> eval(Parser parserAlgorithm) throws IOException, InterruptedException {
-
-        String dockerHubPwd = System.getenv("DOCKERHUB_PWD");
-
-        if (Strings.isNullOrEmpty(dockerHubPwd)) throw new RuntimeException("DockerHub credentials required");
-
-        ObjectMapper mapper = new ObjectMapper();
-
-        BufferedReader trainReader = ReaderUtils.from(CorpusSplitTrainAndTest.TRAIN_DATASET);
-
-        String line;
-
-        AtomicInteger counter = new AtomicInteger();
-        LOG.info("Training a Topic Model from papers at: '" + CorpusSplitTrainAndTest.TRAIN_DATASET+ "' ..");
-        Set<String> keywords = new TreeSet<>();
-        while ((line = trainReader.readLine()) != null){
-
-            JsonNode json = mapper.readTree(line);
-
-            String id = json.get("id").asText();
-            String name = json.get("articles").get(LANGUAGE).get("title").asText();
-            String text = json.get("articles").get(LANGUAGE).get("description").asText() + " " + json.get("articles").get(LANGUAGE).get("content").asText();
-            Iterator<JsonNode> it = json.get("articles").get(LANGUAGE).withArray("keywords").iterator();
-            while(it.hasNext()){
-                String kw = it.next().asText().trim().toLowerCase();
-                keywords.add(kw);
-            }
-
-            Document document = new Document();
-            document.setId(id);
-            document.setName(name);
-            document.setText(parserAlgorithm.parse(text));
-            librairyService.save(document,false,true);
-
-            if (counter.incrementAndGet() % 100 == 0) LOG.info(counter.get() + " papers added");
-
-        }
-        trainReader.close();
-
-
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put("topics","5");
-        parameters.put("iterations","1000");
-        parameters.put("alpha","0.1");
-        parameters.put("beta","0.01");
-        parameters.put("language",LANGUAGE);
-        parameters.put("retries","5");
-        parameters.put("topwords","50");
-        parameters.put("minfreq","5");
-        parameters.put("maxdocratio","0.95");
-        parameters.put("raw","true");
-
-
-        return Arrays.asList(20,50,100,200,500).stream().flatMap( topics -> {
-            parameters.put("topics",String.valueOf(topics));
-            return trainAndTest(parameters, parserAlgorithm).stream();
-        }).collect(Collectors.toList());
-
-
-    }
-
-
-    private List<Evaluation> trainAndTest(Map<String, String> parameters, Parser parserAlgorithm) {
-
-        LOG.info("Training a Topic Model by " + parameters);
-
-        librairyService.train(parameters);
-
-
-        LOG.info("waiting for complete ..");
-        while(!librairyService.isCompleted()){
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        LOG.info("Topic Model created!!");
-
-        Map<String,String> dockerHubParameters = new HashMap<>();
-        dockerHubParameters.put("contactEmail","cbadenes@fi.upm.es");
-        dockerHubParameters.put("contactName","Carlos Badenes-Olmedo");
-        dockerHubParameters.put("contactUrl","http://cbadenes.github.io/");
-        dockerHubParameters.put("credentials.email","cbadenes@gmail.com");
-        dockerHubParameters.put("credentials.password","");
-        dockerHubParameters.put("credentials.repository","cbadenes/cross-"+parserAlgorithm.id()+":"+testId+"_"+parameters.get("topics"));
-        dockerHubParameters.put("credentials.username","cbadenes");
-        dockerHubParameters.put("description","Topic Model created from a Parallel Corpus by using a " + parserAlgorithm.id() + " parser algorithm");
-        dockerHubParameters.put("title","Cross-lingual Topic Model by " + parserAlgorithm.id());
-        dockerHubParameters.put("licenseName","Apache License Version 2.0");
-        dockerHubParameters.put("licenseUrl","https://www.apache.org/licenses/LICENSE-2.0");
-
-        librairyService.export(dockerHubParameters);
-
-        LOG.info("Docker image created and exported to: " + dockerHubParameters.get("credentials.repository"));
-
-        BufferedReader testReader = null;
-        try {
-            testReader = ReaderUtils.from(CorpusSplitTrainAndTest.TEST_DATASET);
-            Map<String,List<Double>> space = new ConcurrentHashMap<>();
-
-            AtomicInteger counter = new AtomicInteger();
-            String line;
-            ParallelExecutor shapeExecutor = new ParallelExecutor();
-            LOG.info("Getting vectorial representation of papers at: '" + CorpusSplitTrainAndTest.TEST_DATASET+ "' ..");
-            while ((line = testReader.readLine()) != null){
-
-                final JsonNode json = jsonMapper.readTree(line);
-
-                shapeExecutor.submit(() -> {
-                    String id   = json.get("id").asText();
-                    LOG.info("shape of " + id);
-                    String text = json.get("articles").get(LANGUAGE).get("description").asText() + " " + json.get("articles").get(LANGUAGE).get("content").asText();
-
-                    ShapeRequest request = new ShapeRequest();
-                    request.setText(parserAlgorithm.parse(text));
-                    Shape shape = librairyService.inference(request);
-                    space.put(id,shape.getVector());
-
-                    if (counter.incrementAndGet() % 100 == 0) LOG.info(counter.get() + " papers shaped");
-
-                });
-
-
-            }
-            shapeExecutor.awaitTermination(1, TimeUnit.HOURS);
-            testReader.close();
-
-            return Arrays.asList(0.6,0.7,0.8,0.9,0.95).stream().flatMap(threshold -> {
-                parameters.put("threshold",String.valueOf(threshold));
-                return test(space,parserAlgorithm,parameters).stream();
-            }).collect(Collectors.toList());
-        } catch (Exception e) {
-            LOG.error("Unexpected Error");
-            return Collections.emptyList();
-        }
-
-
-    }
-
-    private List<Evaluation> test(Map<String,List<Double>> space, Parser algorithm, Map<String,String> parameters)  {
-
-        Double threshold = Double.valueOf(parameters.get("threshold"));
-        LOG.info("Getting relations between papers from gold-standard (>"+threshold + ") ..");
-
-        Map<String,Set<String>> goldStandard = new HashMap<>();
-
-        String line;
-        BufferedReader simReader = null;
-        try {
-            simReader = ReaderUtils.from(CorpusPrepare.PATH);
-            ParallelExecutor relExecutor = new ParallelExecutor();
-            while ((line = simReader.readLine()) != null){
-                final Relation relation = jsonMapper.readValue(line, Relation.class);
-                relExecutor.submit(() -> {
-                    if (relation.getScore() > threshold){
-
-                        // add y to x
-                        Set<String> simPapers = new TreeSet<>();
-
-                        if (goldStandard.containsKey(relation.getX())){
-                            simPapers =  goldStandard.get(relation.getX());
-                        }
-
-                        simPapers.add(relation.getY());
-                        goldStandard.put(relation.getX(), simPapers);
-
-                        // add x to y
-                        simPapers = new TreeSet<>();
-
-                        if (goldStandard.containsKey(relation.getY())){
-                            simPapers =  goldStandard.get(relation.getY());
-                        }
-
-                        simPapers.add(relation.getX());
-                        goldStandard.put(relation.getY(), simPapers);
-
-                    }
-
-                });
-            }
-
-            relExecutor.awaitTermination(1, TimeUnit.HOURS);
-
-            LOG.info("Analyzing results");
-
-            List<Evaluation> evaluations = Arrays.asList(1, 5, 10, 20, 50).stream().map(n -> new Evaluation(n, parameters, algorithm.id())).collect(Collectors.toList());
-
-            AtomicInteger counter = new AtomicInteger();
-
-            ParallelExecutor evalExecutor = new ParallelExecutor();
-
-            for (String id : space.keySet()){
-
-                evalExecutor.submit(() -> {
-                    List<String> relatedPapers = new ArrayList<>(goldStandard.get(id));
-
-                    List<Double> vector = space.get(id);
-
-                    List<String> calculatedRelatedPapers = space.entrySet().stream().filter(entry -> !entry.getKey().equalsIgnoreCase(id)).map(entry -> new Relation("sim", id, entry.getKey(), JensenShannon.similarity(vector, entry.getValue()))).filter(rel -> rel.getScore() > CorpusSplitTrainAndTest.THRESHOLD).sorted((a, b) -> -a.getScore().compareTo(b.getScore())).limit(50).map(rel -> rel.getY()).collect(Collectors.toList());
-
-                    evaluations.forEach( evaluation -> evaluation.addResult(relatedPapers, calculatedRelatedPapers.subList(0, evaluation.getN())));
-
-                    if (counter.incrementAndGet() % 100 == 0) LOG.info(counter.get() + " papers evaluated");
-                });
-
-            }
-            LOG.info(counter.get() + " papers evaluated");
-
-            evalExecutor.awaitTermination(1, TimeUnit.HOURS);
-
-//            evaluations.forEach(evaluation -> LOG.info("Accuracy@" + evaluation.getN() + " -> " + evaluation));
-
-            evaluations.stream().map(evaluation -> evaluation.setAlgorithm(algorithm.id()).setTestId(testId)).forEach(eval -> {
-                try {
-                    LOG.info(""+eval);
-                    writer.write(jsonMapper.writeValueAsString(eval) + "\n");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
-
-            return evaluations;
-        } catch (Exception e) {
-            LOG.error("Unexpected error",e);
-            return Collections.emptyList();
-        }
-
+    private void evaluate(Parser parser) throws IOException {
+        Evaluation evaluation = new Evaluation(testId,CorpusSplitTrainAndTest.TRAIN_DATASET, CorpusSplitTrainAndTest.TEST_DATASET, parser);
+        List<AccuracyReport> reports = evaluation.execute(tests, evals);
+        reports.forEach(report -> {try {writer.write(jsonMapper.writeValueAsString(report) + "\n");} catch (IOException e) {e.printStackTrace();}});
     }
 
 }
