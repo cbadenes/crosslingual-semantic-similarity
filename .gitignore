@@ -1,5 +1,7 @@
+
 reports/
 corpus/
+corpora/
 target/
 .idea
 *.iml

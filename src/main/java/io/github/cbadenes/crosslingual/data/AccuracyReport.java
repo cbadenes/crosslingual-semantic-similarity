@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author Badenes Olmedo, Carlos <cbadenes@fi.upm.es>
@@ -79,6 +80,8 @@ public class AccuracyReport {
 
     public synchronized void addResult(List<String> reference, List<String> value) {
 
+        LOG.debug("adding result from reference: " + reference + " and value: " + value);
+
         truePositive += value.stream().filter(e -> reference.contains(e)).count();
 
         falsePositive += value.stream().filter(e -> !reference.contains(e)).count();
@@ -125,6 +128,7 @@ public class AccuracyReport {
                 ", precision=" + getPrecision() +
                 ", recall=" + getRecall() +
                 ", fMeasure=" + getFMeasure() +
+                ", parameters=" + parameters.entrySet().stream().map(entry -> "'"+entry.getKey()+"'="+entry.getValue()).collect(Collectors.joining("|")) +
                 '}';
     }
 

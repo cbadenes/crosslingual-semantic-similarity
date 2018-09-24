@@ -335,7 +335,7 @@
 					  <excludes>
 						  <exclude>%regex[.*Workflow.*]</exclude>
 						  <exclude>%regex[.*Evaluation.*]</exclude>
-						  <exclude>%regex[.*Task.*]</exclude>
+						  <exclude>%regex[.*Tasks.*]</exclude>
 					  </excludes>
 				  </configuration>
 			  </plugin>

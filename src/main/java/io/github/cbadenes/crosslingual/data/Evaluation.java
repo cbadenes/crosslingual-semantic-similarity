@@ -1,17 +1,13 @@
 package io.github.cbadenes.crosslingual.data;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.repackaged.com.google.common.base.Strings;
 import io.github.cbadenes.crosslingual.algorithms.Parser;
 import io.github.cbadenes.crosslingual.metrics.JensenShannon;
 import io.github.cbadenes.crosslingual.services.LibrairyService;
-import io.github.cbadenes.crosslingual.tasks.CorpusPrepare;
-import io.github.cbadenes.crosslingual.tasks.CorpusSplitTrainAndTest;
 import io.github.cbadenes.crosslingual.utils.ParallelExecutor;
 import io.github.cbadenes.crosslingual.utils.ReaderUtils;
-import io.github.cbadenes.crosslingual.utils.WriterUtils;
 import org.librairy.service.learner.facade.rest.model.Document;
 import org.librairy.service.modeler.facade.rest.model.Shape;
 import org.librairy.service.modeler.facade.rest.model.ShapeRequest;
@@ -19,9 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -40,6 +34,7 @@ public class Evaluation {
     private final LibrairyService librairyService;
     private final ObjectMapper jsonMapper;
     private final String id;
+    private final Boolean saveModel;
 
     String trainingSet;
 
@@ -49,11 +44,12 @@ public class Evaluation {
 
     Map<String,String> parameters = new HashMap<>();
 
-    public Evaluation(String id, String trainingSet, String testSet, Parser parser) throws IOException {
+    public Evaluation(String id, String trainingSet, String testSet, Parser parser, Boolean saveModel) throws IOException {
         this.id = id;
         this.trainingSet = trainingSet;
         this.testSet = testSet;
         this.parser = parser;
+        this.saveModel = saveModel;
 
         librairyService = new LibrairyService("http://librairy.linkeddata.es/cross-topics","oeg","oeg2018");
         librairyService.reset();
@@ -71,19 +67,20 @@ public class Evaluation {
         parameters.put("topwords","50");
         parameters.put("minfreq","5");
         parameters.put("maxdocratio","0.95");
+        parameters.put("stopwords","nv pd fd od ia ii abi ci tlr pfe");
         parameters.put("raw","true");
 
         // DockerHub Parameters
-        parameters.put("contactEmail","cbadenes@fi.upm.es");
-        parameters.put("contactName","Carlos Badenes-Olmedo");
-        parameters.put("contactUrl","http://cbadenes.github.io/");
-        parameters.put("credentials.email","cbadenes@gmail.com");
-        parameters.put("credentials.password",System.getenv("DOCKERHUB_PWD"));
-        parameters.put("credentials.username","cbadenes");
-        parameters.put("description","Topic Model created from a Parallel Corpus by using a " + parser.id() + " parser algorithm");
-        parameters.put("title","Cross-lingual Topic Model by " + parser.id());
-        parameters.put("licenseName","Apache License Version 2.0");
-        parameters.put("licenseUrl","https://www.apache.org/licenses/LICENSE-2.0");
+//        parameters.put("contactEmail","cbadenes@fi.upm.es");
+//        parameters.put("contactName","Carlos Badenes-Olmedo");
+//        parameters.put("contactUrl","http://cbadenes.github.io/");
+//        parameters.put("credentials.email","cbadenes@gmail.com");
+//        parameters.put("credentials.password",System.getenv("DOCKERHUB_PWD"));
+//        parameters.put("credentials.username","cbadenes");
+//        parameters.put("description","Topic Model created from a Parallel Corpus by using a " + parser.id() + " parser algorithm");
+//        parameters.put("title","Cross-lingual Topic Model by " + parser.id());
+//        parameters.put("licenseName","Apache License Version 2.0");
+//        parameters.put("licenseUrl","https://www.apache.org/licenses/LICENSE-2.0");
 
 
 
@@ -102,31 +99,40 @@ public class Evaluation {
         String line;
 
         AtomicInteger counter = new AtomicInteger();
-        LOG.info("Training a Topic Model from papers at: '" + CorpusSplitTrainAndTest.TRAIN_DATASET+ "' ..");
+        LOG.info("Preparing papers from: '" + trainingSet+ "' by parser: " + parser.id() + " ..");
         Set<String> keywords = new TreeSet<>();
+        ParallelExecutor parserExecutor = new ParallelExecutor();
         while ((line = trainReader.readLine()) != null){
 
-            JsonNode json = mapper.readTree(line);
+            final JsonNode json = mapper.readTree(line);
 
-            String id = json.get("id").asText();
-            String language = parser.language();
-            String name = json.get("articles").get(language).get("title").asText();
-            String text = json.get("articles").get(language).get("description").asText() + " " + json.get("articles").get(language).get("content").asText();
-            Iterator<JsonNode> it = json.get("articles").get(language).withArray("keywords").iterator();
-            while(it.hasNext()){
-                String kw = it.next().asText().trim().toLowerCase();
-                keywords.add(kw);
-            }
+            parserExecutor.submit(() -> {
+                try{
+                    String id1 = json.get("id").asText();
+                    String language = parser.language();
+                    String name = json.get("articles").get(language).get("title").asText();
+                    String text = json.get("articles").get(language).get("content").asText();
+                    Iterator<JsonNode> it = json.get("articles").get(language).withArray("keywords").iterator();
+                    while(it.hasNext()){
+                        String kw = it.next().asText().trim().toLowerCase();
+                        keywords.add(kw);
+                    }
 
-            Document document = new Document();
-            document.setId(id);
-            document.setName(name);
-            document.setText(parser.parse(text));
-            librairyService.save(document,false,true);
+                    Document document = new Document();
+                    document.setId(id1);
+                    document.setName(name);
+                    document.setText(parser.parse(text));
+                    librairyService.save(document,false,true);
 
-            if (counter.incrementAndGet() % 100 == 0) LOG.info(counter.get() + " papers added");
+                    if (counter.incrementAndGet() % 100 == 0) LOG.info(counter.get() + " papers added");
+
+                }catch (Exception e){
+                    LOG.error("Error parsing documents",e);
+                }
+            });
 
         }
+        parserExecutor.awaitTermination(1, TimeUnit.HOURS);
         trainReader.close();
         LOG.info(counter.get() + " papers added to learner");
     }
@@ -140,14 +146,14 @@ public class Evaluation {
             AtomicInteger counter = new AtomicInteger();
             String line;
             ParallelExecutor shapeExecutor = new ParallelExecutor();
-            LOG.info("Getting vectorial representation of papers at: '" + testSet+ "' ..");
+            LOG.debug("Getting vectorial representation of papers at: '" + testSet+ "' ..");
             while ((line = testReader.readLine()) != null){
 
                 final JsonNode json = jsonMapper.readTree(line);
 
                 shapeExecutor.submit(() -> {
                     String id   = json.get("id").asText();
-                    LOG.info("shape of " + id);
+                    LOG.debug("shape of " + id);
                     String language = parser.language();
                     String text = json.get("articles").get(language).get("description").asText() + " " + json.get("articles").get(language).get("content").asText();
 
@@ -156,13 +162,14 @@ public class Evaluation {
                     Shape shape = librairyService.inference(request);
                     space.put(id,shape.getVector());
 
-                    if (counter.incrementAndGet() % 100 == 0) LOG.info(counter.get() + " papers shaped");
+                    if (counter.incrementAndGet() % 100 == 0) LOG.debug(counter.get() + " papers shaped");
 
                 });
 
 
             }
             shapeExecutor.awaitTermination(1, TimeUnit.HOURS);
+            LOG.debug(counter.get() + " papers shaped");
             testReader.close();
 
         } catch (Exception e) {
@@ -196,14 +203,31 @@ public class Evaluation {
         LOG.info("Training a Topic Model by " + parameters);
         librairyService.train(parameters);
 
-        LOG.info("waiting for complete ..");
+        LOG.debug("waiting for complete ..");
         while(!librairyService.isCompleted()){try {Thread.sleep(2000);} catch (InterruptedException e) {e.printStackTrace();}}
-        LOG.info("Topic Model created!!");
+        LOG.debug("Topic Model created!!");
 
-        LOG.info("Creating Docker image from Topic Model with parameters: ");
-        parameters.put("credentials.repository","cbadenes/cross-"+parser.id()+":"+id+"_"+parameters.get("topics"));
-        librairyService.export(parameters);
-        LOG.info("Docker image created and exported to: " + parameters.get("credentials.repository"));
+        if (saveModel){
+            LOG.info("Creating Docker image from Topic Model with parameters: ");
+
+            // DockerHub Parameters
+            Map<String,String> dockerParameters = new HashMap<>();
+            dockerParameters.put("contactEmail","cbadenes@fi.upm.es");
+            dockerParameters.put("contactName","Carlos Badenes-Olmedo");
+            dockerParameters.put("contactUrl","http://cbadenes.github.io/");
+            dockerParameters.put("credentials.email","cbadenes@gmail.com");
+            dockerParameters.put("credentials.password",System.getenv("DOCKERHUB_PWD"));
+            dockerParameters.put("credentials.username","cbadenes");
+            dockerParameters.put("description","Topic Model created from a Parallel Corpus by using a " + parser.id() + " parser algorithm");
+            dockerParameters.put("title","Cross-lingual Topic Model by " + parser.id());
+            dockerParameters.put("licenseName","Apache License Version 2.0");
+            dockerParameters.put("licenseUrl","https://www.apache.org/licenses/LICENSE-2.0");
+            dockerParameters.put("credentials.repository","cbadenes/cross-"+parser.id()+":"+id+"_"+parameters.get("topics"));
+            librairyService.export(dockerParameters);
+            LOG.info("Docker image created and exported to: " + dockerParameters.get("credentials.repository"));
+
+        }
+
 
         return prepareTestSet();
     }
@@ -214,51 +238,59 @@ public class Evaluation {
 
 
         Double goldStandardThreshold = Double.valueOf(parameters.get("gold-threshold"));
-        Map<String, Set<String>> goldStandard = createGoldStandard(goldStandardThreshold);
+        Map<String, Set<String>> goldStandard = createGoldStandard(new ArrayList<>(space.keySet()),goldStandardThreshold);
 
-        AccuracyReport report = analyzeResults(space, goldStandard);
+        Double simThreshold = Double.valueOf(parameters.get("threshold"));
+        AccuracyReport report = analyzeResults(space, goldStandard, simThreshold);
         LOG.info("Analysis completed: " + report);
         return report;
 
     }
 
 
-    private Map<String,Set<String>>  createGoldStandard(Double threshold){
+    private Map<String,Set<String>>  createGoldStandard(List<String> testSet, Double threshold){
 
-        LOG.info("Getting relations between papers from gold-standard (>"+threshold + ") ..");
+        LOG.debug("Getting relations between papers from gold-standard (>"+threshold + ") ..");
 
         Map<String,Set<String>> goldStandard = new HashMap<>();
 
         String line;
         BufferedReader simReader = null;
         try {
-            simReader = ReaderUtils.from(CorpusPrepare.PATH);
+            simReader = ReaderUtils.from("");
             ParallelExecutor relExecutor = new ParallelExecutor();
             while ((line = simReader.readLine()) != null) {
-                final Relation relation = jsonMapper.readValue(line, Relation.class);
+                final String json = line;
                 relExecutor.submit(() -> {
-                    if (relation.getScore() > threshold) {
+                    try{
+                        Relation relation = jsonMapper.readValue(json, Relation.class);
+                        if (!testSet.contains(relation.getX()) || !testSet.contains(relation.getY())) return;
+                        if (relation.getScore() > threshold) {
 
-                        // add y to x
-                        Set<String> simPapers = new TreeSet<>();
+                            // add y to x
+                            Set<String> simPapers = new TreeSet<>();
 
-                        if (goldStandard.containsKey(relation.getX())) {
-                            simPapers = goldStandard.get(relation.getX());
+                            if (goldStandard.containsKey(relation.getX())) {
+                                simPapers = goldStandard.get(relation.getX());
+                            }
+
+                            simPapers.add(relation.getY());
+                            goldStandard.put(relation.getX(), simPapers);
+
+                            // add x to y
+                            simPapers = new TreeSet<>();
+
+                            if (goldStandard.containsKey(relation.getY())) {
+                                simPapers = goldStandard.get(relation.getY());
+                            }
+
+                            simPapers.add(relation.getX());
+                            goldStandard.put(relation.getY(), simPapers);
+
                         }
 
-                        simPapers.add(relation.getY());
-                        goldStandard.put(relation.getX(), simPapers);
-
-                        // add x to y
-                        simPapers = new TreeSet<>();
-
-                        if (goldStandard.containsKey(relation.getY())) {
-                            simPapers = goldStandard.get(relation.getY());
-                        }
-
-                        simPapers.add(relation.getX());
-                        goldStandard.put(relation.getY(), simPapers);
-
+                    }catch (Exception e){
+                        LOG.error("Unexpected error parsing json",e);
                     }
 
                 });
@@ -273,8 +305,8 @@ public class Evaluation {
 
     }
 
-    private AccuracyReport analyzeResults (Map<String, List<Double>> space, Map<String,Set<String>> goldStandard){
-        LOG.info("Analyzing results");
+    private AccuracyReport analyzeResults (Map<String, List<Double>> space, Map<String,Set<String>> goldStandard, Double simThreshold){
+        LOG.info("Analyzing results for a space with " + space.size() + " elements");
 
         AccuracyReport report = new AccuracyReport(Integer.valueOf(parameters.get("n")), parameters, parser.id());
 
@@ -285,21 +317,30 @@ public class Evaluation {
         for (String id : space.keySet()){
 
             evalExecutor.submit(() -> {
-                List<String> relatedPapers = new ArrayList<>(goldStandard.get(id));
+                try{
+                    List<String> relatedPapers = goldStandard.containsKey(id)?new ArrayList<>(goldStandard.get(id)) : Collections.emptyList();
 
-                List<Double> vector = space.get(id);
+                    List<Double> vector = space.get(id);
 
-                List<String> calculatedRelatedPapers = space.entrySet().stream().filter(entry -> !entry.getKey().equalsIgnoreCase(id)).map(entry -> new Relation("sim", id, entry.getKey(), JensenShannon.similarity(vector, entry.getValue()))).filter(rel -> rel.getScore() > CorpusSplitTrainAndTest.THRESHOLD).sorted((a, b) -> -a.getScore().compareTo(b.getScore())).limit(50).map(rel -> rel.getY()).collect(Collectors.toList());
+                    List<Relation> topicBasedRelatedPapers = space.entrySet().stream().filter(entry -> !entry.getKey().equalsIgnoreCase(id)).map(entry -> new Relation("sim", id, entry.getKey(), JensenShannon.similarity(vector, entry.getValue()))).filter(rel -> rel.getScore() > simThreshold).sorted((a, b) -> -a.getScore().compareTo(b.getScore())).limit(50).collect(Collectors.toList());
 
-                report.addResult(relatedPapers, calculatedRelatedPapers.subList(0, report.getN()));
+                    List<String> calculatedRelatedPapers = topicBasedRelatedPapers.stream().map(rel -> rel.getY()).collect(Collectors.toList());
 
-                if (counter.incrementAndGet() % 100 == 0) LOG.info(counter.get() + " papers evaluated");
+                    List<String> result = calculatedRelatedPapers.size() < report.getN() ? calculatedRelatedPapers : calculatedRelatedPapers.subList(0, report.getN());
+
+                    report.addResult(relatedPapers, result);
+
+                    if (counter.incrementAndGet() % 100 == 0) LOG.info(counter.get() + " papers evaluated");
+
+                }catch (Exception e){
+                    LOG.error("Unexpected error creating report: ", e);
+                }
             });
 
         }
-        LOG.info(counter.get() + " papers evaluated");
-
         evalExecutor.awaitTermination(1, TimeUnit.HOURS);
+
+        LOG.debug(counter.get() + " papers evaluated");
 
         return report;
     }

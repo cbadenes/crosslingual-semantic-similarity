@@ -93,7 +93,7 @@ public class LibrairyService {
         while(it.hasNext()) {
             LdLocale locale = (LdLocale)it.next();
             if (availableLangs.contains(locale.getLanguage())) {
-                LOG.info("language added: " + locale);
+                LOG.debug("language added: " + locale);
                 languageProfiles.add(langReader.readBuiltIn(locale));
             }
         }

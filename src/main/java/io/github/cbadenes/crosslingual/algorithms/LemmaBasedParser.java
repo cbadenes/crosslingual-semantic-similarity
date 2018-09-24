@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Badenes Olmedo, Carlos <cbadenes@fi.upm.es>
@@ -50,7 +51,7 @@ public class LemmaBasedParser implements Parser {
         while(it.hasNext()) {
             LdLocale locale = (LdLocale)it.next();
             if (availableLangs.contains(locale.getLanguage())) {
-                LOG.info("language added: " + locale);
+                LOG.debug("language added: " + locale);
                 languageProfiles.add(langReader.readBuiltIn(locale));
             }
         }
@@ -66,7 +67,7 @@ public class LemmaBasedParser implements Parser {
 
     @Override
     public String id() {
-        return "LemmaBased["+posList+"]";
+        return "lemmaBased-"+posList.stream().map(w -> w.name().toLowerCase()).collect(Collectors.joining("_"));
     }
 
     @Override
