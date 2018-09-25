@@ -40,7 +40,7 @@ public class DatasetTasks {
      */
     @Test
     public void prepareTest2() throws IOException {
-        dataset.export("test1", Arrays.asList("en","es"),TRAINING_RATIO);
+        dataset.export("test2", Arrays.asList("en","es"),TRAINING_RATIO);
     }
 
     /**
@@ -48,7 +48,7 @@ public class DatasetTasks {
      */
     @Test
     public void prepareTest3() throws IOException {
-        dataset.export("test1", Arrays.asList("en","es","pt"),TRAINING_RATIO);
+        dataset.export("test3", Arrays.asList("en","es","pt"),TRAINING_RATIO);
     }
 
 }

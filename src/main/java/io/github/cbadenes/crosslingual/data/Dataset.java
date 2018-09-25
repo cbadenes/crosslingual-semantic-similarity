@@ -63,7 +63,7 @@ public class Dataset {
             MultiLangArticle multiLangArticle = jsonMapper.readValue(line, MultiLangArticle.class);
             multiLangArticles.add(multiLangArticle);
 
-            if (!multiLangArticle.getArticles().get("en").getKeywords().isEmpty()){
+            if (multiLangArticle.getArticles().get("en").getKeywords().size() > 3){
                 simCandidates.put(multiLangArticle.getId(), multiLangArticle.getArticles().get("en").getKeywords());
             }
         }
@@ -108,7 +108,7 @@ public class Dataset {
     }
 
     public void export(String id, List<String> langs, Double trainingTestRatio) throws IOException {
-        double trainingSize = (trainingTestRatio * multiLangArticles.size()) / 100.0;
+        double trainingSize = trainingTestRatio * multiLangArticles.size();
         double testSize     = multiLangArticles.size() - trainingSize;
 
         Double partialThreshold = 0.0;
