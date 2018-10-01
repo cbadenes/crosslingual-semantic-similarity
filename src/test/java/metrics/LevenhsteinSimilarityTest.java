@@ -1,5 +1,6 @@
-package io.github.cbadenes.crosslingual.metrics;
+package metrics;
 
+import io.github.cbadenes.crosslingual.metrics.LevenhsteinSimilarity;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;

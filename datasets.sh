@@ -1,1 +1,1 @@
-mvn -DargLine="-Xmx4096m" -Dtest=DatasetTasks test
+mvn -DargLine="-Xmx4096m" -Dtest=BuildDatasetsTasks test

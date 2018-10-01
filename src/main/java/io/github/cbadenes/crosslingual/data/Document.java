@@ -23,6 +23,9 @@ public class Document {
         this.text = text;
     }
 
+    public Document() {
+    }
+
     public String getId() {
         return id;
     }
@@ -33,5 +36,17 @@ public class Document {
 
     public String getText() {
         return text;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setLang(String lang) {
+        this.lang = lang;
+    }
+
+    public void setText(String text) {
+        this.text = text;
     }
 }

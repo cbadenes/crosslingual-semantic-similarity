@@ -9,6 +9,10 @@
 
     <logger name="io.github.cbadenes" level="INFO"/>
 
+    <logger name="evaluations" level="INFO"/>
+    <logger name="metrics" level="INFO"/>
+    <logger name="tasks" level="INFO"/>
+
     <root level="ERROR">
         <appender-ref ref="STDOUT" />
     </root>

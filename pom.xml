@@ -63,7 +63,7 @@
 	  <language-detector.version>0.6</language-detector.version>
 	  <librairy.version>[1.0,)</librairy.version>
 	  <logback.version>1.1.3</logback.version>
-	  <mallet.version>2.0.8</mallet.version>
+	  <mallet.version>2.0.8.1</mallet.version>
 	  <mapdb.version>3.0.7</mapdb.version>
 	  <oai.version>1.1.0</oai.version>
 	  <unirest.version>1.4.9</unirest.version>
@@ -308,6 +308,7 @@
 		  <resources>
 			  <resource>
 				  <directory>src/main/resources</directory>
+				  <includes><include>*.*</include></includes>
 			  </resource>
 		  </resources>
 		  <finalName>${project.artifactId}</finalName>
@@ -379,6 +380,16 @@
 		<repository>
 			<id>swagger</id>
 			<url>https://raw.github.com/librairy/swagger/mvn-repo/</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+			</snapshots>
+		</repository>
+
+		<!-- Custom Mallet Repository -->
+		<repository>
+			<id>mallet</id>
+			<url>https://raw.github.com/cbadenes/Mallet/mvn-repo/</url>
 			<snapshots>
 				<enabled>true</enabled>
 				<updatePolicy>always</updatePolicy>

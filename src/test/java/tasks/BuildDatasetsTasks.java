@@ -15,16 +15,16 @@ import java.util.Arrays;
  * @author Badenes Olmedo, Carlos <cbadenes@fi.upm.es>
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class DatasetTasks {
+public class BuildDatasetsTasks {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DatasetTasks.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BuildDatasetsTasks.class);
     private static final Double TRAINING_RATIO = 0.6;
     private static Dataset dataset;
 
 
     @BeforeClass
     public static final void setup() throws IOException {
-        dataset = new Dataset("https://delicias.dia.fi.upm.es/nextcloud/index.php/s/owKeTiGfz68KE4s/download");
+        dataset = new Dataset("https://delicias.dia.fi.upm.es/nextcloud/index.php/s/JEsYAJ32E5RfSiN/download");
     }
 
     /**

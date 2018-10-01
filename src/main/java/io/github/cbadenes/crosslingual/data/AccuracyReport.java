@@ -16,7 +16,7 @@ public class AccuracyReport {
 
     private static final Logger LOG = LoggerFactory.getLogger(AccuracyReport.class);
 
-    private Integer n;
+    private Integer n = 1;
 
     private long truePositive = 0;
 
@@ -24,43 +24,16 @@ public class AccuracyReport {
 
     private long falseNegative = 0;
 
-    private String algorithm;
-
-    private String testId;
-
     private Map<String,String> parameters = new HashMap<>();
 
     public AccuracyReport(Integer n) {
         this.n = n;
     }
 
-    public String getTestId() {
-        return testId;
-    }
-
-    public AccuracyReport setTestId(String testId) {
-        this.testId = testId;
-        return this;
-    }
-
-    public String getAlgorithm() {
-        return algorithm;
-    }
-
-    public AccuracyReport setAlgorithm(String algorithm) {
-        this.algorithm = algorithm;
-        return this;
-    }
 
     public AccuracyReport(Integer n, Map<String, String> parameters) {
         this.n = n;
         this.parameters = parameters;
-    }
-
-    public AccuracyReport(Integer n, Map<String, String> parameters, String algorithm) {
-        this.n = n;
-        this.parameters = parameters;
-        this.algorithm = algorithm;
     }
 
     public AccuracyReport() {
@@ -80,23 +53,37 @@ public class AccuracyReport {
 
     public synchronized void addResult(List<String> reference, List<String> value) {
 
-        LOG.debug("adding result from reference: " + reference + " and value: " + value);
+        List<String> v1 = reference.size() > n ? reference.subList(0, n) : reference;
+        List<String> v2 = value.size() > n ? value.subList(0, n) : value;
 
-        truePositive += value.stream().filter(e -> reference.contains(e)).count();
 
-        falsePositive += value.stream().filter(e -> !reference.contains(e)).count();
+        LOG.debug("adding result from reference: " + v1 + " and value: " + v2);
 
-        falseNegative += reference.stream().filter(e -> !value.contains(e)).count();
+        truePositive += v2.stream().filter(e -> v1.contains(e)).count();
+
+        falsePositive += v2.stream().filter(e -> !v1.contains(e)).count();
+
+        falseNegative += v1.stream().filter(e -> !v2.contains(e)).count();
 
     }
 
     public Double getPrecision() {
-        return Double.valueOf(truePositive) / (Double.valueOf(truePositive) + Double.valueOf(falsePositive));
+
+        Double total = Double.valueOf(truePositive) + Double.valueOf(falsePositive);
+
+        if (total == 0.0) return 0.0;
+
+        return Double.valueOf(truePositive) / total;
     }
 
 
     public Double getRecall() {
-        return Double.valueOf(truePositive) / (Double.valueOf(truePositive) + Double.valueOf(falseNegative));
+
+        Double total = (Double.valueOf(truePositive) + Double.valueOf(falseNegative));
+
+        if (total == 0.0) return 0.0;
+
+        return Double.valueOf(truePositive) / total;
     }
 
     public Double getFMeasure() {
@@ -121,14 +108,13 @@ public class AccuracyReport {
     @Override
     public String toString() {
         return "Evaluation@"+n+"{" +
-                "algorithm="+algorithm+
-                ", truePositive=" + truePositive +
-                ", falsePositive=" + falsePositive +
-                ", falseNegative=" + falseNegative +
-                ", precision=" + getPrecision() +
-                ", recall=" + getRecall() +
-                ", fMeasure=" + getFMeasure() +
-                ", parameters=" + parameters.entrySet().stream().map(entry -> "'"+entry.getKey()+"'="+entry.getValue()).collect(Collectors.joining("|")) +
+                "tp=" + truePositive +
+                ", fp=" + falsePositive +
+                ", fn=" + falseNegative +
+                ", precision@"+n+"=" + getPrecision() +
+                ", recall@"+n+"=" + getRecall() +
+                ", fMeasure@"+n+"=" + getFMeasure() +
+                ", parameters=" + parameters.entrySet().stream().map(entry -> "'"+entry.getKey()+"':"+entry.getValue()).collect(Collectors.joining("|")) +
                 '}';
     }
 
