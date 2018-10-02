@@ -66,6 +66,20 @@
 	  <mallet.version>2.0.8.1</mallet.version>
 	  <mapdb.version>3.0.7</mapdb.version>
 	  <oai.version>1.1.0</oai.version>
+	  <!-- NLP libraries -->
+	  <commons-lang3.version>3.5</commons-lang3.version>
+	  <coreNlpExtensions.version>1.0</coreNlpExtensions.version>
+	  <httpclient.version>4.5.5</httpclient.version>
+	  <io.version>2.6</io.version>
+	  <ixa.pos.version>1.5.2</ixa.pos.version>
+	  <ixa.tok.version>1.8.6</ixa.tok.version>
+	  <ixa.nerc.version>1.6.0</ixa.nerc.version>
+	  <joda.version>2.9.9</joda.version>
+	  <lucene.version>4.10.4</lucene.version>
+	  <stanford.version>3.5.2</stanford.version><!-- 3.6.0 -->
+	  <stanford.parser.version>1.0</stanford.parser.version>
+
+
 	  <unirest.version>1.4.9</unirest.version>
   </properties>
 
@@ -82,6 +96,64 @@
 				  <groupId>org.librairy</groupId>
 				  <artifactId>nlp-service-facade</artifactId>
 				  <version>${librairy.version}</version>
+			  </dependency>
+
+			  <!-- NLP Libraries -->
+			  <dependency>
+				  <groupId>eus.ixa</groupId>
+				  <artifactId>ixa-pipe-pos</artifactId>
+				  <version>${ixa.pos.version}</version>
+			  </dependency>
+			  <dependency>
+				  <groupId>eus.ixa</groupId>
+				  <artifactId>ixa-pipe-tok</artifactId>
+				  <version>${ixa.tok.version}</version>
+			  </dependency>
+			  <dependency>
+				  <groupId>eus.ixa</groupId>
+				  <artifactId>ixa-pipe-nerc</artifactId>
+				  <version>${ixa.nerc.version}</version>
+			  </dependency>
+			  <dependency>
+				  <groupId>org.apache.httpcomponents</groupId>
+				  <artifactId>httpclient</artifactId>
+				  <version>${httpclient.version}</version>
+			  </dependency>
+			  <dependency>
+				  <groupId>edu.stanford.nlp</groupId>
+				  <artifactId>stanford-corenlp</artifactId>
+				  <version>${stanford.version}</version>
+			  </dependency>
+			  <dependency>
+				  <groupId>edu.stanford.nlp</groupId>
+				  <artifactId>stanford-parser</artifactId>
+				  <version>${stanford.version}</version>
+			  </dependency>
+			  <dependency>
+				  <groupId>edu.stanford.nlp</groupId>
+				  <artifactId>stanford-corenlp</artifactId>
+				  <version>${stanford.version}</version>
+				  <classifier>models</classifier>
+			  </dependency>
+			  <dependency>
+				  <groupId>intoxicant.analytics</groupId>
+				  <artifactId>coreNlpExtensions</artifactId>
+				  <version>${coreNlpExtensions.version}</version>
+			  </dependency>
+			  <dependency>
+				  <groupId>org.apache.lucene</groupId>
+				  <artifactId>lucene-core</artifactId>
+				  <version>${lucene.version}</version>
+			  </dependency>
+			  <dependency>
+				  <groupId>org.apache.lucene</groupId>
+				  <artifactId>lucene-analyzers-common</artifactId>
+				  <version>${lucene.version}</version>
+			  </dependency>
+			  <dependency>
+				  <groupId>org.apache.commons</groupId>
+				  <artifactId>commons-lang3</artifactId>
+				  <version>${commons-lang3.version}</version>
 			  </dependency>
 
 
@@ -133,18 +205,6 @@
 				  <version>${commons-io.version}</version>
 			  </dependency>
 
-			  <!-- Stanford CoreNLP -->
-			  <dependency>
-				  <groupId>edu.stanford.nlp</groupId>
-				  <artifactId>stanford-corenlp</artifactId>
-				  <version>${corenlp.version}</version>
-			  </dependency>
-			  <dependency>
-				  <groupId>edu.stanford.nlp</groupId>
-				  <artifactId>stanford-corenlp</artifactId>
-				  <version>${corenlp.version}</version>
-				  <classifier>models</classifier>
-			  </dependency>
 
 			  <!-- Google API -->
 			  <dependency>
@@ -211,6 +271,64 @@
 			  <artifactId>nlp-service-facade</artifactId>
 		  </dependency>
 
+		  <!-- NLP Libraries -->
+		  <dependency>
+			  <groupId>eus.ixa</groupId>
+			  <artifactId>ixa-pipe-pos</artifactId>
+			  <version>${ixa.pos.version}</version>
+		  </dependency>
+		  <dependency>
+			  <groupId>eus.ixa</groupId>
+			  <artifactId>ixa-pipe-tok</artifactId>
+			  <version>${ixa.tok.version}</version>
+		  </dependency>
+		  <dependency>
+			  <groupId>eus.ixa</groupId>
+			  <artifactId>ixa-pipe-nerc</artifactId>
+			  <version>${ixa.nerc.version}</version>
+		  </dependency>
+		  <dependency>
+			  <groupId>org.apache.httpcomponents</groupId>
+			  <artifactId>httpclient</artifactId>
+			  <version>${httpclient.version}</version>
+		  </dependency>
+		  <dependency>
+			  <groupId>edu.stanford.nlp</groupId>
+			  <artifactId>stanford-corenlp</artifactId>
+			  <version>${stanford.version}</version>
+		  </dependency>
+		  <dependency>
+			  <groupId>edu.stanford.nlp</groupId>
+			  <artifactId>stanford-parser</artifactId>
+			  <version>${stanford.version}</version>
+		  </dependency>
+		  <dependency>
+			  <groupId>edu.stanford.nlp</groupId>
+			  <artifactId>stanford-corenlp</artifactId>
+			  <version>${stanford.version}</version>
+			  <classifier>models</classifier>
+		  </dependency>
+		  <dependency>
+			  <groupId>intoxicant.analytics</groupId>
+			  <artifactId>coreNlpExtensions</artifactId>
+			  <version>${coreNlpExtensions.version}</version>
+		  </dependency>
+		  <dependency>
+			  <groupId>org.apache.lucene</groupId>
+			  <artifactId>lucene-core</artifactId>
+			  <version>${lucene.version}</version>
+		  </dependency>
+		  <dependency>
+			  <groupId>org.apache.lucene</groupId>
+			  <artifactId>lucene-analyzers-common</artifactId>
+			  <version>${lucene.version}</version>
+		  </dependency>
+		  <dependency>
+			  <groupId>org.apache.commons</groupId>
+			  <artifactId>commons-lang3</artifactId>
+			  <version>${commons-lang3.version}</version>
+		  </dependency>
+
 		  <!-- Http Libraries -->
 		  <dependency>
 			  <groupId>com.mashape.unirest</groupId>
@@ -250,17 +368,6 @@
 			  <groupId>commons-io</groupId>
 			  <artifactId>commons-io</artifactId>
 			  <version>${commons-io.version}</version>
-		  </dependency>
-
-		  <!-- Stanford CoreNLP -->
-		  <dependency>
-			  <groupId>edu.stanford.nlp</groupId>
-			  <artifactId>stanford-corenlp</artifactId>
-		  </dependency>
-		  <dependency>
-			  <groupId>edu.stanford.nlp</groupId>
-			  <artifactId>stanford-corenlp</artifactId>
-			  <classifier>models</classifier>
 		  </dependency>
 
 		  <!-- Google API -->
@@ -349,6 +456,37 @@
 		<repository>
 			<id>learner-service</id>
 			<url>https://raw.github.com/librairy/learner-service-facade/mvn-repo/</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+			</snapshots>
+		</repository>
+
+
+		<!-- librAIry NLP-EN Repository -->
+		<repository>
+			<id>nlp-en-service</id>
+			<url>https://raw.github.com/librairy/nlpEN-service/mvn-repo/</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+			</snapshots>
+		</repository>
+
+		<!-- librAIry NLP-ES Repository -->
+		<repository>
+			<id>nlp-es-service</id>
+			<url>https://raw.github.com/librairy/nlpES-service/mvn-repo/</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+			</snapshots>
+		</repository>
+
+		<!-- librAIry NLP-PT Repository -->
+		<repository>
+			<id>nlp-pt-service</id>
+			<url>https://raw.github.com/librairy/nlpPT-service/mvn-repo/</url>
 			<snapshots>
 				<enabled>true</enabled>
 				<updatePolicy>always</updatePolicy>

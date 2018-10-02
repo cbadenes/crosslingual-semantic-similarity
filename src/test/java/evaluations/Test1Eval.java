@@ -2,6 +2,7 @@ package evaluations;
 
 import cc.mallet.util.MalletLogger;
 import com.google.common.collect.ImmutableMap;
+import io.github.cbadenes.crosslingual.algorithms.NlpSimilarityAlgorithm;
 import io.github.cbadenes.crosslingual.algorithms.SimpleSimilarityAlgorithm;
 import io.github.cbadenes.crosslingual.algorithms.SimilarityAlgorithm;
 import io.github.cbadenes.crosslingual.data.AccuracyReport;
@@ -60,6 +61,13 @@ public class Test1Eval {
     }
 
 
+    @Test
+    public void nlpAlgorithm(){
+        evaluateAlgorithm(new NlpSimilarityAlgorithm());
+    }
+
+
+
     private void evaluateAlgorithm(SimilarityAlgorithm algorithm){
         // Prepare Parameters
         Map<String, String> parameters = ImmutableMap.of("GOLD", String.valueOf(GOLD_THRESHOLD), "ALGORITHM", String.valueOf(ALG_THRESHOLD));
@@ -68,7 +76,7 @@ public class Test1Eval {
         Map<String, List<Relation>> similarities = algorithm.compare(devDocs, testDocs, 0.5);
 
         // Check results at: 1, 5, 10 and 20 precision
-        List<AccuracyReport> reports = Arrays.asList(new AccuracyReport(1, parameters), new AccuracyReport(5, parameters), new AccuracyReport(10, parameters), new AccuracyReport(20, parameters));
+        List<AccuracyReport> reports = Arrays.asList(new AccuracyReport(1, parameters), new AccuracyReport(5, parameters), new AccuracyReport(10, parameters), new AccuracyReport(20, parameters),new AccuracyReport(50, parameters));
         for(String doc : simDocs.keySet()){
 
             List<String> goldStandard = simDocs.get(doc).parallelStream().filter(rel -> rel.getScore() > GOLD_THRESHOLD).sorted((a, b) -> -a.getScore().compareTo(b.getScore())).map(rel -> rel.getY()).collect(Collectors.toList());

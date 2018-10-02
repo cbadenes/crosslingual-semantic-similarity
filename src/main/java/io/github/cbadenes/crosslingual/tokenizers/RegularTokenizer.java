@@ -17,7 +17,7 @@ public class RegularTokenizer implements Tokenizer {
 
     @Override
     public List<String> tokens(String text) {
-        return Arrays.stream(text.split(" ")).parallel().filter(token -> token.length() > 3).collect(Collectors.toList());
+        return Arrays.stream(text.split(" ")).parallel().filter(token -> token.length() > 3).map(token -> token.toLowerCase()).collect(Collectors.toList());
     }
 
     @Override

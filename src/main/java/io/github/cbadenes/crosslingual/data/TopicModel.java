@@ -41,7 +41,7 @@ public class TopicModel {
         this.documents = documents;
         this.parameters = parameters;
 
-        LOG.info("Training a new topic model with " + documents.size() + " docs..");
+        LOG.info("Training a new topic model with " + documents.size() + " docs and " + parameters);
 
         // Create Instances
         this.pipe = new SerialPipes(Arrays.asList(new Input2CharSequence("UTF-8"),new CharSequence2TokenSequence(Pattern.compile("\\S+")),new TokenSequence2FeatureSequence()));
@@ -186,6 +186,16 @@ public class TopicModel {
         public Parameters setNumIterations(int numIterations) {
             this.numIterations = numIterations;
             return this;
+        }
+
+        @Override
+        public String toString() {
+            return "Parameters{" +
+                    "numTopics=" + numTopics +
+                    ", alpha=" + alpha +
+                    ", beta=" + beta +
+                    ", numIterations=" + numIterations +
+                    '}';
         }
     }
 }

@@ -24,7 +24,8 @@ public class BuildDatasetsTasks {
 
     @BeforeClass
     public static final void setup() throws IOException {
-        dataset = new Dataset("https://delicias.dia.fi.upm.es/nextcloud/index.php/s/JEsYAJ32E5RfSiN/download");
+        //dataset = new Dataset("https://delicias.dia.fi.upm.es/nextcloud/index.php/s/Ja6KWTKijGQQEdA/download");
+        dataset = new Dataset("corpora/papers.json.gz");
     }
 
     /**

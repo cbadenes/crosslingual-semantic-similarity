@@ -3,6 +3,9 @@ package io.github.cbadenes.crosslingual.data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * @author Badenes Olmedo, Carlos <cbadenes@fi.upm.es>
  */
@@ -21,6 +24,12 @@ public class Document {
         this.id = id;
         this.lang = lang;
         this.text = text;
+    }
+
+    public Document(String id, String lang, List<String> tokens) {
+        this.id = id;
+        this.lang = lang;
+        this.text = tokens.stream().collect(Collectors.joining(" "));
     }
 
     public Document() {
