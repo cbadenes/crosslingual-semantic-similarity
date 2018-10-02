@@ -135,11 +135,11 @@
 				  <version>${stanford.version}</version>
 				  <classifier>models</classifier>
 			  </dependency>
-			  <dependency>
-				  <groupId>intoxicant.analytics</groupId>
-				  <artifactId>coreNlpExtensions</artifactId>
-				  <version>${coreNlpExtensions.version}</version>
-			  </dependency>
+			  <!--<dependency>-->
+				  <!--<groupId>intoxicant.analytics</groupId>-->
+				  <!--<artifactId>coreNlpExtensions</artifactId>-->
+				  <!--<version>${coreNlpExtensions.version}</version>-->
+			  <!--</dependency>-->
 			  <dependency>
 				  <groupId>org.apache.lucene</groupId>
 				  <artifactId>lucene-core</artifactId>
@@ -308,11 +308,11 @@
 			  <version>${stanford.version}</version>
 			  <classifier>models</classifier>
 		  </dependency>
-		  <dependency>
-			  <groupId>intoxicant.analytics</groupId>
-			  <artifactId>coreNlpExtensions</artifactId>
-			  <version>${coreNlpExtensions.version}</version>
-		  </dependency>
+		  <!--<dependency>-->
+			  <!--<groupId>intoxicant.analytics</groupId>-->
+			  <!--<artifactId>coreNlpExtensions</artifactId>-->
+			  <!--<version>${coreNlpExtensions.version}</version>-->
+		  <!--</dependency>-->
 		  <dependency>
 			  <groupId>org.apache.lucene</groupId>
 			  <artifactId>lucene-core</artifactId>
