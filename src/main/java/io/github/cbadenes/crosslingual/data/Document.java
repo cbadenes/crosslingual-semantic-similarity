@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author Badenes Olmedo, Carlos <cbadenes@fi.upm.es>
@@ -16,46 +15,95 @@ public class Document {
 
     private String id;
 
-    private String lang;
+    private String name;
 
-    private String text;
+    private List<String> labels;
 
-    public Document(String id, String lang, String text) {
-        this.id = id;
-        this.lang = lang;
-        this.text = text;
-    }
+    private String content;
 
-    public Document(String id, String lang, List<String> tokens) {
-        this.id = id;
-        this.lang = lang;
-        this.text = tokens.stream().collect(Collectors.joining(" "));
-    }
+    private String format;
+
+    private String language;
+
+    private String source;
+
+    private String date;
 
     public Document() {
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
     }
 
     public String getId() {
         return id;
     }
 
-    public String getLang() {
-        return lang;
-    }
-
-    public String getText() {
-        return text;
-    }
-
     public void setId(String id) {
         this.id = id;
     }
 
-    public void setLang(String lang) {
-        this.lang = lang;
+    public String getName() {
+        return name;
     }
 
-    public void setText(String text) {
-        this.text = text;
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public List<String> getLabels() {
+        return labels;
+    }
+
+    public void setLabels(List<String> labels) {
+        this.labels = labels;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    @Override
+    public String toString() {
+        return "Document{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", source='" + source + '\'' +
+                ", lang='" + language + '\'' +
+                ", labels=" + labels +
+                '}';
     }
 }

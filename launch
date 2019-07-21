@@ -1,3 +1,0 @@
-nohup ./$1 > nohup.log 2>&1 &
-echo $! > nohup.pid
-tail -f nohup.log
