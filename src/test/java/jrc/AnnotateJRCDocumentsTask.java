@@ -1,4 +1,4 @@
-package tasks;
+package jrc;
 
 import com.google.common.base.Strings;
 import com.mashape.unirest.http.HttpResponse;

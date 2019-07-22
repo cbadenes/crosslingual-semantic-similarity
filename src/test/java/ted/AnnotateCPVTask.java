@@ -1,4 +1,4 @@
-package tasks;
+package ted;
 
 import com.google.common.collect.ImmutableMap;
 import io.github.cbadenes.crosslingual.io.SolrClient;
