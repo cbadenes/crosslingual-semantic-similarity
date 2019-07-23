@@ -2,6 +2,7 @@ package io.github.cbadenes.crosslingual.io;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.common.base.Strings;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.ObjectMapper;
@@ -93,6 +94,8 @@ public class librAIryClient {
 
     public Optional<HierarchicalTopics> getTopics(String text, String endpoint){
 
+        if (Strings.isNullOrEmpty(text)) return Optional.empty();
+
         Text txt = new Text();
         txt.setText(text);
 
@@ -116,8 +119,8 @@ public class librAIryClient {
 
             return Optional.of(topics);
 
-        } catch (UnirestException e) {
-            LOG.error("Unexpected API error",e);
+        } catch (Exception e) {
+            LOG.error("Unexpected API error: "+e.getMessage());
             return Optional.empty();
         }
 
@@ -147,8 +150,8 @@ public class librAIryClient {
 
             return topics;
 
-        } catch (UnirestException e) {
-            LOG.error("Unexpected API error",e);
+        } catch (Exception e) {
+            LOG.error("Unexpected API error: "+ e.getMessage());
             return new HashMap<>();
         }
 
@@ -160,6 +163,9 @@ public class librAIryClient {
 
     public List<Annotation> getAnnotations (AnnotationRequest request){
         try {
+
+            if (Strings.isNullOrEmpty(request.getText())) return Collections.emptyList();
+
             List<Annotation> annotations = new ArrayList<>();
             Map<String,String> headers = new HashMap<>();
             headers.put("Content-Type","application/json");
@@ -200,8 +206,8 @@ public class librAIryClient {
 
             return annotations;
 
-        } catch (UnirestException e) {
-            LOG.error("Unexpected API error",e);
+        } catch (Exception e) {
+            LOG.error("Unexpected API error: " + e.getMessage());
             return Collections.emptyList();
         }
     }

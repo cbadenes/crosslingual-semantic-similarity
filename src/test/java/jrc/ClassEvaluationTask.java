@@ -40,7 +40,7 @@ public class ClassEvaluationTask {
 
     @Test
     public void test1(){
-        evaluate("test1", 100);
+        evaluate("test1", 1000);
     }
 
 

@@ -37,8 +37,8 @@ public class AnnotateJRCDocumentsTask {
 
     static final String input_labels    = "root-labels_t";
 
-    //static final String model_endpoint  = "http://librairy.linkeddata.es/jrc-%%-model";
-    static final String model_endpoint  = "http://librairy.linkeddata.es/jrc-%%-model-unsupervised";
+    static final String model_endpoint  = "http://librairy.linkeddata.es/jrc-%%-model";
+//    static final String model_endpoint  = "http://librairy.linkeddata.es/jrc-%%-model-unsupervised";
 
     static final String model_labels    = "http://librairy.linkeddata.es/solr/eurovoc";
 
@@ -53,11 +53,11 @@ public class AnnotateJRCDocumentsTask {
     }
 
 
-//    @Test
-//    public void test1(){
-//
-//        annotate("test1",100, "en", true);
-//    }
+    @Test
+    public void test1(){
+
+        annotate("test1",1000, "it", true);
+    }
 
     @Test
     public void test1_1(){
